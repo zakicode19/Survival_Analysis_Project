@@ -1,0 +1,232 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+
+```{r}
+library(survival)
+library(tidyverse)
+library(survminer)
+```
+# Load the data
+
+```{r}
+data <- read_csv('data/heart_failure_clinical_records_dataset.csv')
+```
+```{r}
+head(data)
+```
+
+```{r}
+summary(data)
+```
+```{r}
+data$sex <- factor(data$sex, labels= c("female", "male"))
+```
+```{r}
+data$anaemia <- factor(data$anaemia)
+```
+
+```{r}
+data$diabetes <- factor(data$diabetes)
+data$high_blood_pressure <- factor(data$high_blood_pressure)
+data$smoking <- factor(data$smoking)
+```
+
+```{r}
+# Define the breakpoints for the three levels
+breakpoints <- c(-Inf, 30, 45, Inf)
+# Divide EF into three levels
+data$EF_levels <- cut(data$ejection_fraction, breaks = breakpoints, labels = c("EF ≤ 30", "30 < EF ≤ 45", "EF > 45"))
+
+```
+
+# Kaplan-Meyer estimator
+```{r}
+fit.KM <- survfit(Surv(time,DEATH_EVENT) ~ 1, data = data)
+summary(fit.KM)
+```
+
+
+```{r}
+fit.KM
+```
+
+Median don't exite  because  96 (32%) patients died due to CHD this is low then 50% of patients 
+```{r}
+
+ggsurvplot(fit.KM, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
+             
+           palette=c("dodgerblue2", "orchid2"),
+           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           risk.table.height=.30, data=data)
+```
+
+```{r}
+plot(fit.KM, mark.time = TRUE,
+     main = "Kaplan-Meier estimator",
+     ylab = "Survival probability",
+     xlab = "time (seconds)")
+
+```
+
+CDF:
+```{r}
+plot(fit.KM, fun = "F")
+```
+
+
+
+## Male vs. Female  
+```{r}
+sfit <- survfit(Surv(time, DEATH_EVENT) ~ sex , data = data)
+sfit
+```
+
+```{r}
+ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
+           legend.labs=c("Female", "Male"), legend.title="Sex",  
+           palette=c("dodgerblue2", "orchid2"),
+           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           risk.table.height=.30, data=data)
+```
+```{r}
+fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ sex, data = data)
+fit.logrank
+```
+from survival curves of male and female and using the long rank test we can concluded that the sex has no significant impact  
+
+## Smoking
+```{r}
+sfit <- survfit(Surv(time, DEATH_EVENT) ~ smoking , data = data)
+sfit
+```
+
+```{r}
+ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
+            legend.title="smoking",  
+           palette=c("dodgerblue2", "orchid2"),
+           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           risk.table.height=.28, data=data)
+```
+
+## blood pressure
+```{r}
+sfit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure , data = data)
+sfit
+```
+
+```{r}
+ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
+            legend.title="high_blood_pressure",  
+           palette=c("dodgerblue2", "orchid2"),
+           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           risk.table.height=.28, data=data)
+```
+###  The logrank test
+```{r}
+fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ high_blood_pressure, data = data)
+fit.logrank
+```
+he p-value is 0.04, which is less than 0.05. Therefore, you can conclude that there is evidence of a statistically significant difference in survival between the two groups based on the presence or absence of high blood pressure
+
+
+## diabetes
+```{r}
+sfit <- survfit(Surv(time, DEATH_EVENT) ~ diabetes , data = data)
+sfit
+```
+
+```{r}
+ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
+            legend.title="diabetes",  
+           palette=c("dodgerblue2", "orchid2"),
+           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           risk.table.height=.28, data=data)
+```
+## anaemia
+```{r}
+sfit <- survfit(Surv(time, DEATH_EVENT) ~ anaemia , data = data)
+sfit
+```
+
+```{r}
+ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
+            legend.title="anaemia",  
+           palette=c("dodgerblue2", "orchid2"),
+           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           risk.table.height=.28, data=data)
+```
+### The logrank test
+```{r}
+fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ anaemia, data = data)
+fit.logrank
+```
+## the impacet of age
+
+age is contuins varablie we need firs discrtizei, over 60 beacuse 60 is median 
+```{r}
+d_age60 <-
+  data |>
+  mutate(age60 = factor(age <= 60,
+                      labels = c("<=60", ">60")))
+
+table(d_age60$age60)
+```
+```{r}
+data$over60 = d_age60$age60
+
+```
+
+
+```{r}
+sfit <- survfit(Surv(time, DEATH_EVENT) ~ over60 , data = data)
+sfit
+```
+
+```{r}
+ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
+            legend.title="over60",  
+           palette=c("dodgerblue2", "orchid2"),
+           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           risk.table.height=.28, data=data)
+```
+### The logrank test
+```{r}
+fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ over60, data = data)
+fit.logrank
+```
+## Ejection Fraction
+```{r}
+sfit <- survfit(Surv(time, DEATH_EVENT) ~ EF_levels , data = data)
+sfit
+```
+
+```{r}
+ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
+            legend.title="anaemia",  
+           palette=c("dodgerblue2", "orchid2", "orchid2"),
+           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           risk.table.height=.28, data=data)
+```
+
+```{r}
+plot(sfit, col = c("black", "gray", "red"))
+```
+
+
+## age and Sex
+```{r}
+sfit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + sex , data = data)
+sfit
+```
+
+```{r}
+plot(sfit, col = c("black", "gray", "red", "blue"), lwd = 2)
+```
+
+DATA Source
+Ahmad, Tanvir; Munir, Assia; Bhatti, Sajjad Haider; Aftab, Muhammad; Ali Raza, Muhammad (2017). DATA_MINIMAL.. PLOS ONE. Dataset. https://doi.org/10.1371/journal.pone.0181001.s001
