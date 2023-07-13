@@ -36,7 +36,7 @@ We explain some of the non-evident features:
   - ejection fraction : percentage of blood pump out of the left ventricle with each contraction. If the EF is less than 40%, it indicates an heart failure or cardiomyopathy
   - platelets : the normal amount of platelets ranges between 150,000 to 450,000 per μL of blood. 
   - serum sodium : sodium amount in blood is a well known indicator of heart failure.   Is normal value ranges between 135-145 milli equivalents per liter.
-The presence of time and death event make this dataset perfectly adapted for a survival analysis. As all the patient didn't die, the dataset has right censored data.
+The presence of time and death event make this dataset perfectly adapted for a survival analysis. he unit of time is day. As all the patient didn't die, the dataset has right censored data.
 ```{r}
 data$sex <- factor(data$sex, labels= c("female", "male"))
 ```
@@ -60,33 +60,46 @@ data$EF_levels <- cut(data$ejection_fraction, breaks = breakpoints, labels = c("
 
 # Kaplan-Meyer estimator
 
+We estimate the survival probability with the Kaplan - meier estimator.
 ```{r}
 fit.KM <- survfit(Surv(time,DEATH_EVENT) ~ 1, data = data)
-summary(fit.KM)
-```
-
-
-```{r}
 fit.KM
 ```
 
-Median don't exite  because  96 (32%) patients died due to CHD this is low then 50% of patients 
+96 (32%) patients died due to the Cardiovascular Heart Disease (CHD). The median, 0.95LCL and 0.95UCl are NA because too many data are right censored. We need to go deeper in the analysis. 
 ```{r}
-
 ggsurvplot(fit.KM, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
              
            palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           title="Kaplan-Meier Curve for Heart Falure Survival", xlab = "Day",
            risk.table.height=.30, data=data)
 ```
+As the EF level and the high tension are the directly heart related covariates, we use them for the Kaplan Meier survival estimate    
 
 ```{r}
-plot(fit.KM, mark.time = TRUE,
-     main = "Kaplan-Meier estimator",
-     ylab = "Survival probability",
-     xlab = "time (seconds)")
+fit.KM1 <- survfit(Surv(time,DEATH_EVENT) ~ EF_levels, data = data)
+ggsurvplot(fit.KM1, conf.int=TRUE, pval=TRUE,
+           title="Kaplan-Meier Curve per EF levels for Heart Failure Survival", xlab = "Day",
+           risk.table.height=.30, data=data)
+
+
+fit.KM2 <- survfit(Surv(time,DEATH_EVENT) ~ high_blood_pressure, data = data)
+ggsurvplot(fit.KM2, conf.int=TRUE, pval=TRUE,
+           title="Kaplan-Meier Curve per high blood pressure for Heart Failure Survival", xlab = "Day",
+           risk.table.height=.30, data=data)
+```
+ The EF levels are indeed heavily correlated to the death for patient with heart failure as shown bby the plot and the p-value. The high pressure is less correlated.
+ 
+ 
+ An other seemingly obvious covariates is the sex :
+```{r}
+fit.KM3 <- survfit(Surv(time,DEATH_EVENT) ~ sex, data = data)
+ggsurvplot(fit.KM3, conf.int=TRUE, pval=TRUE,
+           title="Kaplan-Meier Curve per sex for Heart Failure Survival", xlab = "Day",
+           risk.table.height=.30, data=data)
 
 ```
+ The sex is not correlated to death
 
 CDF:
 ```{r}
