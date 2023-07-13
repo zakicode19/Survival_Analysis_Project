@@ -1,8 +1,10 @@
 ---
 title: "R Notebook"
 output:
-  pdf_document: default
+  html_document:
+    df_print: paged
   html_notebook: default
+  pdf_document: default
 ---
 
 
@@ -206,27 +208,58 @@ sfit
 ```
 
 ```{r}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="anaemia",  
-           palette=c("dodgerblue2", "orchid2", "orchid2"),
+ggsurvplot(sfit, pval = TRUE , data = data, 
+           legend.title="EF levels",
            title="Kaplan-Meier Curve for Heart Falure Survival", 
-           risk.table.height=.28, data=data)
+           )
 ```
-
+### The logrank test
 ```{r}
-plot(sfit, col = c("black", "gray", "red"))
+fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ EF_levels, data = data)
+fit.logrank
 ```
-
-
-## age and Sex
+Since the p-value is less than 0.05 we reject the null hypothesis, this means  there is a statistically significant difference in survival between the three groups. 
+## age and anaemia
 ```{r}
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + sex , data = data)
+sfit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + anaemia , data = data)
 sfit
 ```
 
 ```{r}
-plot(sfit, col = c("black", "gray", "red", "blue"), lwd = 2)
+ggsurv <- ggsurvplot(sfit,  conf.int = TRUE,data=data,
+                     ggtheme = theme_bw())
+
+ggsurv$plot +theme_bw() + 
+  theme (legend.position = "right")
+```
+## high_blood_pressure and anaemia
+```{r}
+sfit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia , data = data)
+sfit
 ```
 
+
+```{r}
+ggsurvplot(sfit, pval = TRUE , data = data, 
+           legend.title="",
+           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           )
+```
+
+```{r}
+ggsurv <- ggsurvplot(sfit,  conf.int = TRUE,data=data,
+                     ggtheme = theme_bw())
+
+ggsurv$plot +theme_bw() + 
+  theme (legend.position = "right")+
+  facet_grid('anaemia')
+```
+
+
+# Cox Proportional Hazards Model
+
+```{r}
+
+```
 DATA Source
 Ahmad, Tanvir; Munir, Assia; Bhatti, Sajjad Haider; Aftab, Muhammad; Ali Raza, Muhammad (2017). DATA_MINIMAL.. PLOS ONE. Dataset. https://doi.org/10.1371/journal.pone.0181001.s001
