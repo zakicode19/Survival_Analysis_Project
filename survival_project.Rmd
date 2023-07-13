@@ -125,7 +125,7 @@ sfit
 ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
             legend.title="high_blood_pressure",  
            palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           title="Kaplan-Meier Curve for Heart Failure Survival", 
            risk.table.height=.28, data=data)
 ```
 ###  The logrank test
@@ -259,7 +259,22 @@ ggsurv$plot +theme_bw() +
 # Cox Proportional Hazards Model
 
 ```{r}
-
+head(data)
 ```
+
+
+```{r}
+fit_cph <- coxph(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia + EF_levels +over60, data = data)
+fit_cph
+```
+```{r}
+test.ph <- cox.zph(fit_cph)
+test.ph
+```
+```{r}
+ggcoxzph(test.ph)
+```
+
+
 DATA Source
 Ahmad, Tanvir; Munir, Assia; Bhatti, Sajjad Haider; Aftab, Muhammad; Ali Raza, Muhammad (2017). DATA_MINIMAL.. PLOS ONE. Dataset. https://doi.org/10.1371/journal.pone.0181001.s001
