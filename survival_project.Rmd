@@ -1,12 +1,13 @@
 ---
 title: "R Notebook"
-output:
-  html_document:
-    df_print: paged
-  html_notebook: default
-  pdf_document: default
+author : Christophe Mpaga, Ahmed Oulad Amara, Adrien Parruitte
+output: 
+  df_print: paged
+  pdf_document: 
+    toc: true
 ---
 
+Heart failure is a chronic condition where the heart is unable to effectively pump enough blood to meet the body's needs. It occurs when the heart muscle becomes weakened or damaged, leading to symptoms like shortness of breath, fatigue, and fluid retention. Heart failures happen from a variety of reason such as coronary disease, diabetes, obesity etc. In this study we try to determine the importance of various parameter on the survival of patient having heart failure. The event we analyse is then the death of the patient.
 
 ```{r}
 library(survival)
@@ -15,6 +16,8 @@ library(survminer)
 ```
 # Load the data
 
+The individuals of the data were patients admitted to Institute of Cardiology and Allied hospital Faisalabad-Pakistan during April-December (2015). From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years. All have left ventricular systolic dysfunction, belonging to  New York Heart Association (NYHA) class III and IV. Class III means patients have marked limitations of physical activity. They are comfortable at rest but experience symptoms with less than ordinary physical activity. Class IV means patients are unable to carry out any physical activity without discomfort. They may have symptoms even at rest and are often bedridden. 
+From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years.
 ```{r}
 data <- read_csv('data/heart_failure_clinical_records_dataset.csv')
 ```
@@ -25,6 +28,15 @@ head(data)
 ```{r}
 summary(data)
 ```
+The dataset has 13 features: Age, Anemia, High Blood Pressure, Creatinine phosphokinase, Diabetes, Ejection Fraction, Sex, Platelets, Serum Creatinine, Serum Sodium, Smoking, Time and Death Event. 
+We explain some of the non-evident features:
+  - anemia : lower than normal haemoglobin concentration in blood
+  - Creatinine phosphokinase : an enzyme notably found in the heart. Can leak in the blood in case of heart damage
+  - serum creatinine : a waste formed by the functioning of muscle. It is present in the blood and eliminated by the kidney through urine. As it is a serum creatinine the amount is not error induced by the taking of supplement creatine  
+  - ejection fraction : percentage of blood pump out of the left ventricle with each contraction. If the EF is less than 40%, it indicates an heart failure or cardiomyopathy
+  - platelets : the normal amount of platelets ranges between 150,000 to 450,000 per μL of blood. 
+  - serum sodium : sodium amount in blood is a well known indicator of heart failure.   Is normal value ranges between 135-145 milli equivalents per liter.
+The presence of time and death event make this dataset perfectly adapted for a survival analysis. As all the patient didn't die, the dataset has right censored data.
 ```{r}
 data$sex <- factor(data$sex, labels= c("female", "male"))
 ```
@@ -47,6 +59,7 @@ data$EF_levels <- cut(data$ejection_fraction, breaks = breakpoints, labels = c("
 ```
 
 # Kaplan-Meyer estimator
+
 ```{r}
 fit.KM <- survfit(Surv(time,DEATH_EVENT) ~ 1, data = data)
 summary(fit.KM)
