@@ -2,17 +2,23 @@
 title: "Time to heart failure survival analysis"
 author: "Christophe Mpaga, Ahmed Oulad Amara, Adrien Parruitte"
 output: 
-  pdf_document:
-    toc: true 
   
+  pdf_document: 
+    toc: yes
 ---
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
 # Context
 Heart failure is a chronic condition where the heart is unable to effectively pump enough blood to meet the body's needs. It occurs when the heart muscle becomes weakened or damaged, leading to symptoms like shortness of breath, fatigue, and fluid retention. Heart failures happen from a variety of reason such as coronary disease, diabetes, obesity etc. In this study we try to determine the importance of various parameter on the survival of patient having heart failure. The event we analyse is then the death of the patient.
 
-```{r libraries}
+```{r libraries, message=FALSE,warning=FALSE}
 library(survival)
 library(tidyverse)
 library(survminer)
+library(broom)
 ```
 # Introduction
 
@@ -29,7 +35,7 @@ We explain some of the non-evident features:
   - Creatinine phosphokinase : an enzyme notably found in the heart. Can leak in the blood in case of heart damage. 
   - serum creatinine : a waste formed by the functioning of muscle. It is present in the blood and eliminated by the kidney through urine. As it is a serum creatinine the amount is not error induced by the taking of supplement creatine   
   - ejection fraction : percentage of blood pump out of the left ventricle with each contraction. If the EF is less than 40%, it indicates an heart failure or cardiomyopathy. 
-  - platelets : the normal amount of platelets ranges between 150,000 to 450,000 per `r expression(mu)`L of blood.   
+  - platelets : the normal amount of platelets ranges between 150,000 to 450,000 per $\mu$L of blood.   
   - serum sodium : sodium amount in blood is a well known indicator of heart failure.   Is normal value ranges between 135-145 milli equivalents per liter.
 The presence of time and death event make this dataset perfectly adapted for a survival analysis. he unit of time is day. As all the patient didn't die, the dataset has right censored data.   
 
@@ -38,7 +44,7 @@ data <- read_csv('data/heart_failure_clinical_records_dataset.csv')
 ```
 
 ```{r}
-head(data)
+head(data,3)
 ```
 
 ```{r}
@@ -47,13 +53,7 @@ head(data)
 
 ```{r}
 data$sex <- factor(data$sex, labels= c("female", "male"))
-``` 
-
-```{r}
 data$anaemia <- factor(data$anaemia)
-```
-
-```{r}
 data$diabetes <- factor(data$diabetes)
 data$high_blood_pressure <- factor(data$high_blood_pressure)
 data$smoking <- factor(data$smoking)
@@ -64,7 +64,7 @@ data$smoking <- factor(data$smoking)
 breakpoints <- c(-Inf, 30, 45, Inf)
 # Divide EF into three levels
 data$EF_levels <- cut(data$ejection_fraction, breaks = breakpoints, labels = c("EF <= 30", "30 < EF <= 45", "EF > 45"))
-# avoid special character difficult for Latex here , or which needs much attention plz. 
+
 ```
 
 
@@ -78,13 +78,17 @@ fit.KM
 96 (32%) patients died due to the Cardiovascular Heart Disease (CHD). The median, 0.95LCL and 0.95UCl are NA because too many data are right censored. We need to go deeper in the analysis. 
 ```{r}
 ggsurvplot(fit.KM, 
-           conf.int=TRUE, 
-           pval=TRUE, 
-           risk.table=TRUE, 
-             
-           palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", xlab = "Day",
-           risk.table.height=.30, data=data)
+           #fun = "event",
+          # conf.int=TRUE, 
+           #pval.method = TRUE,
+           #pval=TRUE, 
+           #risk.table=TRUE, 
+           break.time.by = 50, 
+           #palette=c("dodgerblue2"),
+           title="Kaplan-Meier Curve for Heart Failure Survival",
+           xlab = "Day",
+           #risk.table.height=.30, 
+          data=data)
 ```
 As the EF level and the high tension are the directly heart related covariates, we use them for the Kaplan Meier survival estimate  
 
@@ -92,222 +96,219 @@ As the EF level and the high tension are the directly heart related covariates, 
 ### EF
 
 ```{r}
-fit.KM1 <- survfit(Surv(time,DEATH_EVENT) ~ EF_levels, data = data)
-ggsurvplot(fit.KM1, conf.int=TRUE, pval=TRUE,
-           title="Kaplan-Meier Curve per EF levels for Heart Failure Survival", xlab = "Day",
-           risk.table.height=.30, data=data)
+fit.EF <- survfit(Surv(time,DEATH_EVENT) ~ EF_levels, data = data)
 
-
-fit.KM2 <- survfit(Surv(time,DEATH_EVENT) ~ high_blood_pressure, data = data)
-ggsurvplot(fit.KM2, conf.int=TRUE, pval=TRUE,
-           title="Kaplan-Meier Curve per high blood pressure for Heart Failure Survival", xlab = "Day",
-           risk.table.height=.30, data=data)
+# conditional plot 
+if (surv_pvalue(fit.EF,data)$pval <= 0.05){
+ggsurvplot(fit.EF, 
+            #fun = "event",
+           #conf.int=TRUE,
+           break.time.by = 50, 
+           pval=TRUE,
+           title="Survival time difference in  EF levels ",  
+           xlab = "Day",
+          # risk.table.height=.30,
+           data=data) } else {
+cat("p-value = ",surv_pvalue(fit.EF,data)$pval ,". There is no difference of EF in time to heart failure")
+           }
 ```
+
  The EF levels are indeed heavily correlated to the death for patient with heart failure as shown bby the plot and the p-value. The high pressure is less correlated.
  
+   
+# high blood pressure  
+```{r}
+
+fit.hbp <- survfit(Surv(time,DEATH_EVENT) ~ high_blood_pressure, data = data)
+if (surv_pvalue(fit.hbp,data)$pval <= 0.05) {
+ggsurvplot(fit.hbp, 
+          #fun = "event",
+          # conf.int=TRUE,
+           pval=TRUE,
+           break.time.by = 50, 
+           title="Survival time difference in high blood pressure ", 
+           xlab = "Day",
+           #risk.table.height=.30, 
+           data=data)} else {
+            cat("No difference in survival time in hbp")
+          }
+```
+`r surv_pvalue(fit.hbp,data)$pval`, there is an effect of hbp in time to heart failure.  
+
  
- An other seemingly obvious covariates is the sex :
+### Sex  
 ```{r}
 fit.KM3 <- survfit(Surv(time,DEATH_EVENT) ~ sex, data = data)
-ggsurvplot(fit.KM3, conf.int=TRUE, pval=TRUE,
-           title="Kaplan-Meier Curve per sex for Heart Failure Survival", xlab = "Day",
-           risk.table.height=.30, data=data)
-
+if (surv_pvalue(fit.KM3,data = data)$pval <= 0.05) {
+ggsurvplot(fit.KM3, 
+            #fun = "event",
+           #conf.int=TRUE, 
+           pval=TRUE,
+           break.time.by = 50, 
+           title="survival time difference in Sex ", 
+           xlab = "Day",
+           #risk.table.height=.30, 
+           data=data)} else {
+  cat("p-value = ",surv_pvalue(fit.KM3,data = data)$pval,". No statistical difference, i.e. no difference of time to heart failure in sex")
+}
 ```
- The sex is not correlated to death
 
 CDF:
-```{r}
+```{r,eval = F}
 plot(fit.KM, fun = "F")
 ```
 
+From survival curves of male and female and using the long rank test we can concluded that the sex has no significant impact  
 
-
-### Sex 
+### Smoking.  
 ```{r}
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ sex , data = data)
-sfit
+smocking_fit <- survfit(Surv(time, DEATH_EVENT) ~ smoking , data = data)
+if (surv_pvalue(smocking_fit,data)$pval >= 0.05) {
+cat("p-value = ",surv_pvalue(smocking_fit,data)$pval,"There no difference in survival time in Smoking.")
+}
 ```
 
+
+### blood pressure  
 ```{r}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-           legend.labs=c("Female", "Male"), legend.title="Sex",  
+hbp_fit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure , data = data)
+if (surv_pvalue(hbp_fit,data)$pval <= 0.5) {
+   ggsurvplot(hbp_fit,
+            #fun = "event",
+           #conf.int=TRUE, 
+           pval=TRUE,
+           break.time.by = 50, 
+           #risk.table=TRUE, 
+           legend.title="",  
            palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
-           risk.table.height=.30, data=data)
+           title="Difference in survival time in high blood pressure", 
+           #risk.table.height=.28, 
+           data=data)
+} else {
+  cat("p-value = ",surv_pvalue(hbp_fit,data)$pval,"There no difference in survival time in hbp")
+}
 ```
 
+The p-value is 0.04, which is less than 0.05. Therefore, you can conclude that there is evidence of a statistically significant difference in survival between the two groups based on the presence or absence of high blood pressure
 
-```{r}
-fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ sex, data = data)
-fit.logrank
-```
-from survival curves of male and female and using the long rank test we can concluded that the sex has no significant impact  
 
-### Smoking
+### diabetes  
 ```{r}
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ smoking , data = data)
-sfit
-```
+diabetes_fit <- survfit(Surv(time, DEATH_EVENT) ~ diabetes , data = data)
+if(surv_pvalue(diabetes_fit,data)$pval <= 0.05) {
 
-```{r}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="smoking",  
+ggsurvplot(diabetes_fit, 
+            #fun = "event",
+           #conf.int=TRUE, 
+           pval=TRUE, 
+           #risk.table=TRUE, 
+           legend.title="diabetes",  
            palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
-           risk.table.height=.28, data=data)
+           title="Kaplan-Meier Curve for Heart Failure Survival", 
+           #risk.table.height=.28,
+           data=data)
+} else {
+  cat("p-value = ",surv_pvalue(diabetes_fit,data)$pval, "There is no difference in survival time in diabetes")
+}
+```
+### anaemia  
+```{r}
+anaemia_fit <- survfit(Surv(time, DEATH_EVENT) ~ anaemia , data = data)
+cat("p-value = ",round(surv_pvalue(anaemia_fit,data)$pval,2),
+    "there is no difference in survival time")
 ```
 
-### blood pressure
-```{r}
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure , data = data)
-sfit
-```
-
-```{r}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="high_blood_pressure",  
+```{r,eval=FALSE}
+ggsurvplot(anaemia_fit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
+            legend.title="anaemia",  
            palette=c("dodgerblue2", "orchid2"),
            title="Kaplan-Meier Curve for Heart Failure Survival", 
            risk.table.height=.28, data=data)
 ```
 
-
-```{r}
-fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ high_blood_pressure, data = data)
-fit.logrank
-```
-he p-value is 0.04, which is less than 0.05. Therefore, you can conclude that there is evidence of a statistically significant difference in survival between the two groups based on the presence or absence of high blood pressure
-
-
-### diabetes
-```{r}
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ diabetes , data = data)
-sfit
-```
-
-```{r}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="diabetes",  
-           palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
-           risk.table.height=.28, data=data)
-```
-### anaemia
-```{r}
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ anaemia , data = data)
-sfit
-```
-
-```{r}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="anaemia",  
-           palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
-           risk.table.height=.28, data=data)
-```
-
-
-```{r}
-fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ anaemia, data = data)
-fit.logrank
-```
-
-### age
-age is continuous variable we need first to discretise it, over 60 because 60 is median 
+### age  
+age is continuous variable we need first to discretize it, over 60 because 60 is median 
 ```{r}
 d_age60 <-
   data |>
   mutate(age60 = factor(age <= 60,
-                      labels = c("<=60", ">60")))
+                      labels = c(" <= 60 ", " > 60 ")))
 
 table(d_age60$age60)
-```
-```{r}
+
 data$over60 = d_age60$age60
-
 ```
 
-
+### effect of age over 60  
 ```{r}
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ over60 , data = data)
-sfit
-```
-
-```{r}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="over60",  
-           palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
+age.fit <- survfit(Surv(time, DEATH_EVENT) ~ over60 , data = data)
+if (surv_pvalue(age.fit,data)$pval <= 0.5) {
+  ggsurvplot(age.fit, 
+          #fun = "event",
+          #conf.int=TRUE,
+          pval=TRUE, 
+          #risk.table=TRUE, 
+          legend.title="over60",  
+          palette=c("dodgerblue2", "orchid2"),
+           title="Kaplan-Meier Curve for Heart Failure Survival", 
            risk.table.height=.28, data=data)
+}else {
+  cat(" p-value = ",round(surv_pvalue(age.fit,data)$pval,2), "There is no difference in survival time in in age over 60")
+}
 ```
 
-
+### additive effect of Ejection Fraction  
 ```{r}
-fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ over60, data = data)
-fit.logrank
-```
+ejection_fit <- survfit(Surv(time, DEATH_EVENT) ~ EF_levels , data = data)
+if(surv_pvalue(ejection_fit,data)$pval  <= 0.05) {
 
-### Ejection Fraction
-```{r}
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ EF_levels , data = data)
-sfit
-```
-
-```{r}
-ggsurvplot(sfit, pval = TRUE , data = data, 
+ggsurvplot(ejection_fit,
+           #fun = "event",
+           pval = TRUE , data = data, 
            legend.title="EF levels",
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           title="Difference in Ejection Fraction survival", 
            )
+} else {
+ cat("p-value = ", surv_pvalue(ejection_fit,data)$pval," There is no 
+difference in Ejection fraction") 
+}
 ```
 
-
-```{r}
-fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ EF_levels, data = data)
-fit.logrank
-```
 Since the p-value is less than 0.05 we reject the null hypothesis, this means  there is a statistically significant difference in survival between the three groups.  
 
-## bivariates analysis 
-### age and anaemia
+## bivariates analysis  
+### additive effect of age and anaemia. 
 ```{r}
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + anaemia , data = data)
-sfit
-```
-
-```{r}
-ggsurv <- ggsurvplot(sfit,  conf.int = TRUE,data=data,
+age_anaemia_fit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + anaemia , data = data)
+if (surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
+  
+ggsurv <- ggsurvplot(age_anaemaia_fit, 
+                     conf.int = TRUE,data=data,
                      ggtheme = theme_bw())
 
 ggsurv$plot +theme_bw() + 
-  theme (legend.position = "right")
+  theme (legend.position = "right") } else {
+    cat("p-value =",round(surv_pvalue(age_anaemia_fit,data)$pval,3),
+        "There is no difference in survival time with respect to age and anaemia" )
+  }
 ```
 
-### high_blood_pressure and anaemia
+### additive effect of high_blood_pressure and anaemia. 
 ```{r}
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia , data = data)
-sfit
-```
-
-
-```{r}
-ggsurvplot(sfit, pval = TRUE , data = data, 
+age_anaemia_fit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia , data = data)
+if(surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
+        ggsurvplot(sfit, 
+           #fun = "event", 
+           pval = TRUE , data = data, 
            legend.title="",
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
+           title="additive effect of anaemia and high blood pressure"
            )
+} else {
+  cat("p-value = ",surv_pvalue(age_anaemia_fit,data)$pval,"There is no additive effect of hbp and anaemia")
+}
 ```
 
-```{r}
-ggsurv <- ggsurvplot(sfit,  conf.int = TRUE,data=data,
-                     ggtheme = theme_bw())
-
-ggsurv$plot +theme_bw() + 
-  theme (legend.position = "right")+
-  facet_grid('anaemia')
-```
-
-
-## Multivariates analysis : Cox Proportional Hazards Model
+## Multivariates analysis : Cox Proportional Hazards Model.  
 
 ```{r}
 head(data)
@@ -315,14 +316,18 @@ head(data)
 
 
 ```{r}
-fit_cph <- coxph(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia + EF_levels +over60, data = data)
-fit_cph
+fit_cph <- coxph(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia +     EF_levels + over60, 
+                 data = data)
+fit_cph %>% tidy() %>% 
+  filter(p.value <= 0.05)
 ```
 
 ```{r}
 test.ph <- cox.zph(fit_cph)
 test.ph
 ```
+
+
 ```{r}
 ggcoxzph(test.ph)
 ```
