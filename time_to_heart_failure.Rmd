@@ -1,5 +1,5 @@
 ---
-title: "Titme to heart failiure analysis"
+title: "Time to heart failure survival analysis"
 author: "Christophe Mpaga, Ahmed Oulad Amara, Adrien Parruitte"
 output: 
   pdf_document:
@@ -19,8 +19,10 @@ library(survminer)
 The individuals of the data were patients admitted to Institute of Cardiology and Allied hospital Faisalabad-Pakistan during April-December (2015). From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years. All have left ventricular systolic dysfunction, belonging to  New York Heart Association (NYHA) class III and IV. Class III means patients have marked limitations of physical activity. They are comfortable at rest but experience symptoms with less than ordinary physical activity. Class IV means patients are unable to carry out any physical activity without discomfort. They may have symptoms even at rest and are often bedridden. 
 From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years.  
 
-# data acquisition preparation and investigation.    
-## data dictionary   
+# Methods 
+## data acquisition preparation and investigation.    
+### data dictionary  
+Data originate from the study of Ahmad et al. 2017 ^[Ahmad, Tanvir; Munir, Assia; Bhatti, Sajjad Haider; Aftab, Muhammad; Ali Raza, Muhammad (2017). DATA_MINIMAL.. PLOS ONE. Dataset. https://doi.org/10.1371/journal.pone.0181001.s001]. 
 The dataset has 13 features: Age, Anemia, High Blood Pressure, Creatinine phosphokinase, Diabetes, Ejection Fraction, Sex, Platelets, Serum Creatinine, Serum Sodium, Smoking, Time and Death Event. 
 We explain some of the non-evident features:  
   - anemia : lower than normal haemoglobin concentration in blood
@@ -65,7 +67,7 @@ data$EF_levels <- cut(data$ejection_fraction, breaks = breakpoints, labels = c("
 # avoid special character difficult for Latex here , or which needs much attention plz. 
 ```
 
-# univariate analysis : group comparison 
+
 ## overall Kaplan-Meyer estimator
 We estimate the survival probability with the Kaplan-meier estimator.
 ```{r}
@@ -84,7 +86,10 @@ ggsurvplot(fit.KM,
            title="Kaplan-Meier Curve for Heart Falure Survival", xlab = "Day",
            risk.table.height=.30, data=data)
 ```
-As the EF level and the high tension are the directly heart related covariates, we use them for the Kaplan Meier survival estimate    
+As the EF level and the high tension are the directly heart related covariates, we use them for the Kaplan Meier survival estimate  
+
+## univariate analysis : group comparison 
+### EF
 
 ```{r}
 fit.KM1 <- survfit(Surv(time,DEATH_EVENT) ~ EF_levels, data = data)
@@ -118,7 +123,7 @@ plot(fit.KM, fun = "F")
 
 
 
-## Male vs. Female  
+### Sex 
 ```{r}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ sex , data = data)
 sfit
@@ -139,7 +144,7 @@ fit.logrank
 ```
 from survival curves of male and female and using the long rank test we can concluded that the sex has no significant impact  
 
-## Smoking
+### Smoking
 ```{r}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ smoking , data = data)
 sfit
@@ -153,7 +158,7 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
            risk.table.height=.28, data=data)
 ```
 
-## blood pressure
+### blood pressure
 ```{r}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure , data = data)
 sfit
@@ -166,7 +171,8 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
            title="Kaplan-Meier Curve for Heart Failure Survival", 
            risk.table.height=.28, data=data)
 ```
-###  The logrank test
+
+
 ```{r}
 fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ high_blood_pressure, data = data)
 fit.logrank
@@ -174,7 +180,7 @@ fit.logrank
 he p-value is 0.04, which is less than 0.05. Therefore, you can conclude that there is evidence of a statistically significant difference in survival between the two groups based on the presence or absence of high blood pressure
 
 
-## diabetes
+### diabetes
 ```{r}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ diabetes , data = data)
 sfit
@@ -187,7 +193,7 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
            title="Kaplan-Meier Curve for Heart Falure Survival", 
            risk.table.height=.28, data=data)
 ```
-## anaemia
+### anaemia
 ```{r}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ anaemia , data = data)
 sfit
@@ -200,13 +206,14 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
            title="Kaplan-Meier Curve for Heart Falure Survival", 
            risk.table.height=.28, data=data)
 ```
-### The logrank test
+
+
 ```{r}
 fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ anaemia, data = data)
 fit.logrank
 ```
-## the impacet of age
 
+### age
 age is continuous variable we need first to discretise it, over 60 because 60 is median 
 ```{r}
 d_age60 <-
@@ -234,12 +241,14 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
            title="Kaplan-Meier Curve for Heart Falure Survival", 
            risk.table.height=.28, data=data)
 ```
-### The logrank test
+
+
 ```{r}
 fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ over60, data = data)
 fit.logrank
 ```
-## Ejection Fraction
+
+### Ejection Fraction
 ```{r}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ EF_levels , data = data)
 sfit
@@ -251,13 +260,16 @@ ggsurvplot(sfit, pval = TRUE , data = data,
            title="Kaplan-Meier Curve for Heart Falure Survival", 
            )
 ```
-### The logrank test
+
+
 ```{r}
 fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ EF_levels, data = data)
 fit.logrank
 ```
 Since the p-value is less than 0.05 we reject the null hypothesis, this means  there is a statistically significant difference in survival between the three groups.  
-## age and anaemia
+
+## bivariates analysis 
+### age and anaemia
 ```{r}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + anaemia , data = data)
 sfit
@@ -270,7 +282,8 @@ ggsurv <- ggsurvplot(sfit,  conf.int = TRUE,data=data,
 ggsurv$plot +theme_bw() + 
   theme (legend.position = "right")
 ```
-## high_blood_pressure and anaemia
+
+### high_blood_pressure and anaemia
 ```{r}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia , data = data)
 sfit
@@ -294,7 +307,7 @@ ggsurv$plot +theme_bw() +
 ```
 
 
-# Cox Proportional Hazards Model
+## Multivariates analysis : Cox Proportional Hazards Model
 
 ```{r}
 head(data)
@@ -314,7 +327,10 @@ test.ph
 ggcoxzph(test.ph)
 ```
 
+# Results   
+# Discussion (if needed)   
+# Conclusions   
+# References   
 
-[DATA Source]
-(Ahmad, Tanvir; Munir, Assia; Bhatti, Sajjad Haider; Aftab, Muhammad; Ali Raza, Muhammad (2017). DATA_MINIMAL.. PLOS ONE. Dataset. https://doi.org/10.1371/journal.pone.0181001.s001)
+Ahmad T, Munir A, Bhatti SH, Aftab M, Raza MA (2017) Survival analysis of heart failure patients: A case study. PLoS ONE 12(7): e0181001. https://doi.org/10.1371/journal.pone.0181001
 
