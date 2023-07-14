@@ -17,7 +17,7 @@ library(survminer)
 # Load the data
 
 The individuals of the data were patients admitted to Institute of Cardiology and Allied hospital Faisalabad-Pakistan during April-December (2015). From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years. All have left ventricular systolic dysfunction, belonging to  New York Heart Association (NYHA) class III and IV. Class III means patients have marked limitations of physical activity. They are comfortable at rest but experience symptoms with less than ordinary physical activity. Class IV means patients are unable to carry out any physical activity without discomfort. They may have symptoms even at rest and are often bedridden. 
-From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years.
+
 ```{r}
 data <- read_csv('data/heart_failure_clinical_records_dataset.csv')
 ```
@@ -76,35 +76,11 @@ ggsurvplot(fit.KM, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
 ```
 As the EF level and the high tension are the directly heart related covariates, we use them for the Kaplan Meier survival estimate    
 
-```{r}
-fit.KM1 <- survfit(Surv(time,DEATH_EVENT) ~ EF_levels, data = data)
-ggsurvplot(fit.KM1, conf.int=TRUE, pval=TRUE,
-           title="Kaplan-Meier Curve per EF levels for Heart Failure Survival", xlab = "Day",
-           risk.table.height=.30, data=data)
 
-
-fit.KM2 <- survfit(Surv(time,DEATH_EVENT) ~ high_blood_pressure, data = data)
-ggsurvplot(fit.KM2, conf.int=TRUE, pval=TRUE,
-           title="Kaplan-Meier Curve per high blood pressure for Heart Failure Survival", xlab = "Day",
-           risk.table.height=.30, data=data)
-```
- The EF levels are indeed heavily correlated to the death for patient with heart failure as shown bby the plot and the p-value. The high pressure is less correlated.
+ The EF levels are indeed heavily correlated to the death for patient with heart failure as shown by the plot and the p-value. The high pressure is less correlated.
  
  
- An other seemingly obvious covariates is the sex :
-```{r}
-fit.KM3 <- survfit(Surv(time,DEATH_EVENT) ~ sex, data = data)
-ggsurvplot(fit.KM3, conf.int=TRUE, pval=TRUE,
-           title="Kaplan-Meier Curve per sex for Heart Failure Survival", xlab = "Day",
-           risk.table.height=.30, data=data)
-
-```
- The sex is not correlated to death
-
-CDF:
-```{r}
-plot(fit.KM, fun = "F")
-```
+An other seemingly obvious covariates is the sex :
 
 
 
@@ -125,7 +101,7 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
 fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ sex, data = data)
 fit.logrank
 ```
-from survival curves of male and female and using the long rank test we can concluded that the sex has no significant impact  
+from survival curves of male and female and using the long rank test we can concluded that the sex has no significant impact 
 
 ## Smoking
 ```{r}
@@ -141,7 +117,7 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
            risk.table.height=.28, data=data)
 ```
 
-## blood pressure
+## Blood pressure
 ```{r}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure , data = data)
 sfit
@@ -162,7 +138,7 @@ fit.logrank
 he p-value is 0.04, which is less than 0.05. Therefore, you can conclude that there is evidence of a statistically significant difference in survival between the two groups based on the presence or absence of high blood pressure
 
 
-## diabetes
+## Biabetes
 ```{r}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ diabetes , data = data)
 sfit
@@ -175,7 +151,7 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
            title="Kaplan-Meier Curve for Heart Falure Survival", 
            risk.table.height=.28, data=data)
 ```
-## anaemia
+## Anaemia
 ```{r}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ anaemia , data = data)
 sfit
@@ -193,21 +169,18 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
 fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ anaemia, data = data)
 fit.logrank
 ```
-## the impacet of age
+## The impacet of age
 
-age is contuins varablie we need firs discrtizei, over 60 beacuse 60 is median 
+We need to discretize the variable 'age' since it is a continuous variable. We will use 60 as the threshold for discretization because it represents the median age. 
 ```{r}
 d_age60 <-
   data |>
   mutate(age60 = factor(age <= 60,
                       labels = c("<=60", ">60")))
 
-table(d_age60$age60)
-```
-```{r}
 data$over60 = d_age60$age60
-
 ```
+
 
 
 ```{r}
@@ -216,11 +189,11 @@ sfit
 ```
 
 ```{r}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="over60",  
+ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, 
+            legend.title="Age over 60",  
            palette=c("dodgerblue2", "orchid2"),
            title="Kaplan-Meier Curve for Heart Falure Survival", 
-           risk.table.height=.28, data=data)
+          , data=data)
 ```
 ### The logrank test
 ```{r}
@@ -287,7 +260,56 @@ ggsurv$plot +theme_bw() +
 ```{r}
 head(data)
 ```
+## Univariate Cox regression
 
+
+```{r}
+column_names <- names(data)
+print(column_names)
+```
+```{r}
+column_names[1:11]
+```
+```{r}
+covariates <- column_names[1:11]
+#covariates <- append(covariates, 'EF_levels')
+covariates
+```
+
+```{r}
+univ_formulas <- sapply(covariates,
+                        function(x) as.formula(paste('Surv(time, DEATH_EVENT)~', x)))
+
+univ_models <- lapply( univ_formulas, function(x){coxph(x, data = data)})
+
+
+# Extract data 
+univ_results <- lapply(univ_models,
+                       function(x){ 
+                          x <- summary(x)
+                          p.value<-signif(x$wald["pvalue"], digits=2)
+                          wald.test<-signif(x$wald["test"], digits=2)
+                          beta<-signif(x$coef[1], digits=2);#coeficient beta
+                          HR <-signif(x$coef[2], digits=2);#exp(beta)
+                          HR.confint.lower <- signif(x$conf.int[,"lower .95"], 2)
+                          HR.confint.upper <- signif(x$conf.int[,"upper .95"],2)
+                          HR <- paste0(HR, " (", 
+                                       HR.confint.lower, "-", HR.confint.upper, ")")
+                          res<-c(beta, HR, wald.test, p.value)
+                          names(res)<-c("beta", "HR (95% CI for HR)", "wald.test", 
+                                        "p.value")
+                          return(res)
+                          #return(exp(cbind(coef(x),confint(x))))
+                         })
+```
+
+```{r}
+res <- t(as.data.frame(univ_results, check.names = FALSE))
+as.data.frame(res)
+```
+
+
+## Multivariate Cox regression analysis
 
 ```{r}
 fit_cph <- coxph(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia + EF_levels +over60, data = data)
