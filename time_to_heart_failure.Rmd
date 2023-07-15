@@ -75,6 +75,7 @@ fit.KM <- survfit(Surv(time,DEATH_EVENT) ~ 1, data = data)
 fit.KM
 ```
 
+
 96 (32%) patients died due to the Cardiovascular Heart Disease (CHD). The median, 0.95LCL and 0.95UCl are NA because too many data are right censored. We need to go deeper in the analysis. 
 ```{r}
 ggsurvplot(fit.KM, 
@@ -88,12 +89,13 @@ ggsurvplot(fit.KM,
            title="Kaplan-Meier Curve for Heart Failure Survival",
            xlab = "Day",
            #risk.table.height=.30, 
-          data=data)
+          data=data)  
+
 ```
 As the EF level and the high tension are the directly heart related covariates, we use them for the Kaplan Meier survival estimate  
 
 ## univariate analysis : group comparison 
-### EF
+### Ejection fraction
 
 ```{r}
 fit.EF <- survfit(Surv(time,DEATH_EVENT) ~ EF_levels, data = data)
@@ -103,7 +105,8 @@ if (surv_pvalue(fit.EF,data)$pval <= 0.05){
 ggsurvplot(fit.EF, 
             #fun = "event",
            #conf.int=TRUE,
-           break.time.by = 50, 
+           surv.median.line = "hv",
+           break.time.by = 25, 
            pval=TRUE,
            title="Survival time difference in  EF levels ",  
            xlab = "Day",
@@ -112,16 +115,20 @@ ggsurvplot(fit.EF,
 cat("p-value = ",surv_pvalue(fit.EF,data)$pval ,". There is no difference of EF in time to heart failure")
            }
 ```
+```{r}
+# summary(km)$table["median"]
+fit.EF
+```
 
- The EF levels are indeed heavily correlated to the death for patient with heart failure as shown bby the plot and the p-value. The high pressure is less correlated.
- 
-   
-# high blood pressure  
+Since the p-value is less than 0.05 we reject the null hypothesis, this means  there is a statistically significant difference in survival between the three groups.  
+
+### high blood pressure  
 ```{r}
 
 fit.hbp <- survfit(Surv(time,DEATH_EVENT) ~ high_blood_pressure, data = data)
 if (surv_pvalue(fit.hbp,data)$pval <= 0.05) {
 ggsurvplot(fit.hbp, 
+           #surv.median.line = "hv",
           #fun = "event",
           # conf.int=TRUE,
            pval=TRUE,
@@ -133,7 +140,7 @@ ggsurvplot(fit.hbp,
             cat("No difference in survival time in hbp")
           }
 ```
-`r surv_pvalue(fit.hbp,data)$pval`, there is an effect of hbp in time to heart failure.  
+`r surv_pvalue(fit.hbp,data)$pval`, there is a group difference in survival time wrt/ high blood pressure in time to heart failure.  
 
  
 ### Sex  
@@ -153,7 +160,7 @@ ggsurvplot(fit.KM3,
 }
 ```
 
-CDF:
+
 ```{r,eval = F}
 plot(fit.KM, fun = "F")
 ```
@@ -169,31 +176,9 @@ cat("p-value = ",surv_pvalue(smocking_fit,data)$pval,"There no difference in sur
 ```
 
 
-### blood pressure  
-```{r}
-hbp_fit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure , data = data)
-if (surv_pvalue(hbp_fit,data)$pval <= 0.5) {
-   ggsurvplot(hbp_fit,
-            #fun = "event",
-           #conf.int=TRUE, 
-           pval=TRUE,
-           break.time.by = 50, 
-           #risk.table=TRUE, 
-           legend.title="",  
-           palette=c("dodgerblue2", "orchid2"),
-           title="Difference in survival time in high blood pressure", 
-           #risk.table.height=.28, 
-           data=data)
-} else {
-  cat("p-value = ",surv_pvalue(hbp_fit,data)$pval,"There no difference in survival time in hbp")
-}
-```
-
-The p-value is 0.04, which is less than 0.05. Therefore, you can conclude that there is evidence of a statistically significant difference in survival between the two groups based on the presence or absence of high blood pressure
-
 
 ### diabetes  
-```{r}
+```{r} 
 diabetes_fit <- survfit(Surv(time, DEATH_EVENT) ~ diabetes , data = data)
 if(surv_pvalue(diabetes_fit,data)$pval <= 0.05) {
 
@@ -219,8 +204,11 @@ cat("p-value = ",round(surv_pvalue(anaemia_fit,data)$pval,2),
 ```
 
 ```{r,eval=FALSE}
-ggsurvplot(anaemia_fit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="anaemia",  
+ggsurvplot(anaemia_fit, 
+           conf.int=TRUE,
+           pval=TRUE, 
+           risk.table=TRUE, 
+           legend.title="anaemia",  
            palette=c("dodgerblue2", "orchid2"),
            title="Kaplan-Meier Curve for Heart Failure Survival", 
            risk.table.height=.28, data=data)
@@ -244,8 +232,7 @@ data$over60 = d_age60$age60
 age.fit <- survfit(Surv(time, DEATH_EVENT) ~ over60 , data = data)
 if (surv_pvalue(age.fit,data)$pval <= 0.5) {
   ggsurvplot(age.fit, 
-          #fun = "event",
-          #conf.int=TRUE,
+          break.time.by = 50,
           pval=TRUE, 
           #risk.table=TRUE, 
           legend.title="over60",  
@@ -253,28 +240,10 @@ if (surv_pvalue(age.fit,data)$pval <= 0.5) {
            title="Kaplan-Meier Curve for Heart Failure Survival", 
            risk.table.height=.28, data=data)
 }else {
-  cat(" p-value = ",round(surv_pvalue(age.fit,data)$pval,2), "There is no difference in survival time in in age over 60")
+  cat(" p-value = ",round(surv_pvalue(age.fit,data)$pval,2), "There is no difference in survival time in age over 60")
 }
 ```
 
-### additive effect of Ejection Fraction  
-```{r}
-ejection_fit <- survfit(Surv(time, DEATH_EVENT) ~ EF_levels , data = data)
-if(surv_pvalue(ejection_fit,data)$pval  <= 0.05) {
-
-ggsurvplot(ejection_fit,
-           #fun = "event",
-           pval = TRUE , data = data, 
-           legend.title="EF levels",
-           title="Difference in Ejection Fraction survival", 
-           )
-} else {
- cat("p-value = ", surv_pvalue(ejection_fit,data)$pval," There is no 
-difference in Ejection fraction") 
-}
-```
-
-Since the p-value is less than 0.05 we reject the null hypothesis, this means  there is a statistically significant difference in survival between the three groups.  
 
 ## bivariates analysis  
 ### additive effect of age and anaemia. 
@@ -311,30 +280,28 @@ if(surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
 ## Multivariates analysis : Cox Proportional Hazards Model.  
 
 ```{r}
-head(data)
-```
-
-
-```{r}
 fit_cph <- coxph(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia +     EF_levels + over60, 
                  data = data)
-fit_cph %>% tidy() %>% 
-  filter(p.value <= 0.05)
+summary(fit_cph) %>% 
+  coefficients() %>% 
+  as.data.frame() %>% 
+  filter(`Pr(>|z|)` <= 0.05) %>% 
+  select(contains(c("coef","Pr"))) -> sum
+sum
 ```
 
-```{r}
-test.ph <- cox.zph(fit_cph)
-test.ph
-```
-
-
-```{r}
-ggcoxzph(test.ph)
-```
+Patients presenting `high_blood_pressure`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45` and `age > 60`  are more likely to experience heart failure and die. Moreover, presenting a `high_blood_pressure` increases the risk of heart failure by a hazard rate of 1.53, holding other covariates fixed, while, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60` increases the risk of dying from heart failure with hazard rate magnitude less than 1. 
 
 # Results   
-# Discussion (if needed)   
+In this application, we were to analyze time to heart failure in this cohort, the event being death. We have found that, there is no median time to death. Our results show that there is an effect of high blood pressure , EF and ageing,but surprisingly no effect of Smocking, nor diabetes or anaemia. There is a group difference in survival time in  `EF` and `high blood pressure`. Half of subject having  `EF` less than 30 , are expected to die after  almost 175 days. An additive model with covariates,  `high_blood_pressure1`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45` and `age > 60`  shows that, patients presenting a profile with theses covariates are more likely to experience heart failure and die. Also, There is a marginal, but noticeable  effect of ageing. 
+
+# Discussion 
+
+We aim at analyzing time to heart failure.We have found that, there is an effect of high blood pressure , EF and ageing,but surprisingly no effect of Smocking, nor diabetes or anaemia. (to document)
+
 # Conclusions   
+Following our results, we can conclude that Ejection fraction and high blood pressure influence time to heart failure and the occurence of CHD as well as aging. Overall,above half of these patients died early of heart failure. Therefore we couldn't have an overall median time to heart failure. 
+
 # References   
 
 Ahmad T, Munir A, Bhatti SH, Aftab M, Raza MA (2017) Survival analysis of heart failure patients: A case study. PLoS ONE 12(7): e0181001. https://doi.org/10.1371/journal.pone.0181001
