@@ -90,11 +90,7 @@ data$bad_platelet[data$platelets >= 150000 & data$platelets <= 450000] <- 0
 ```
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-d_age60 <-
-  data |>
-  mutate(age60 = factor(age <= 60,
-                      labels = c("<=60", ">60")))
-data$over60 = d_age60$age60
+data$over60 <- cut(data$age, breaks = c(-Inf, 60, Inf), labels = c("<=60", ">60"), include.lowest = TRUE)
 ```
 
 
@@ -173,6 +169,7 @@ A long-rank test was conducted to determine whether there are differences in sur
 We can notice that the p-value is below 0.05 for EF levels, High blood pressure, and Age over 60. Therefore, we reject the null hypothesis, indicating that these covariates have a statistically significant impact on survival.
 
 # Proportional Hazards Model
+Let's assume that our survival function follow a semi-parametric model. 
 ## Univariate Cox regression
 We will be examining the significance of each covariate using the Cox regression model. The results will be presented in a table, which includes the covariates, their beta coefficients, hazard ratios, lower confidence intervals, upper confidence intervals, and p-values.
 
@@ -258,7 +255,10 @@ For both EF level comparisons, the negative beta coefficients indicate a negativ
 
 High Blood Pressure is another significant factor with p-value = 0.037.  These covariates have The positive beta coefficient of 0.44 suggests a positive association High Blood Pressure and risk of death.
 
-Let's assume that our survival function follow a semi-parametric model.  
+For the Age covariate the p-value is less than 0.05 but  the hazard ratio is equal to 1 this means that we cannot reject the null hypothesis. also it suggests that there is no significant difference in survival between the groups for this covariate.
+On the other hand, for the covariate over60 the p-value being less than 0.05 and the hazard ratio equal 1.6, this indicates that patients over 60 years old have a 1.6 times higher risk of death compared to patients below 60 years old.
+
+ 
 ## Multivariate  analysis  
 ### Cox semi-parametric model : additive effect of age and anaemia.  
 ```{r,  echo=FALSE, warning=FALSE, results='asis'}
