@@ -261,7 +261,7 @@ High Blood Pressure is another significant factor with p-value = 0.037.  These c
 Let's assume that our survival function follow a semi-parametric model.  
 ## Multivariate  analysis  
 ### Cox semi-parametric model : additive effect of age and anaemia.  
-```{r,  echo=FALSE, warning=FALSE}
+```{r,  echo=FALSE, warning=FALSE, results='asis'}
 age_anaemia_fit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + anaemia , data = data)
 if (surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
   ggsurvplot(age_anaemaia_fit,  conf.int = TRUE,data=data, ggtheme = theme)
@@ -271,8 +271,8 @@ if (surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
   }
 ```
 
-### additive effect of high_blood_pressure and anaemia. 
-```{r  echo=FALSE, warning=FALSE}
+### Additive effect of high_blood_pressure and anaemia. 
+```{r  echo=FALSE, warning=FALSE, results='asis'}
 age_anaemia_fit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia , data = data)
 if(surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
         ggsurvplot(sfit, 
@@ -288,7 +288,7 @@ if(surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
 
 
 ### Semi-parametric full model 
-```{r  echo=FALSE,  warning=FALSE}
+```{r,  echo=FALSE,  warning=FALSE}
 fit_cph <- step(coxph(Surv(time, DEATH_EVENT) ~., 
                  data = data),direction= "both",trace = 0)
 #fit_cph
@@ -305,10 +305,11 @@ knitr::kable( as.data.frame(sum))
 
 Under semi-parametric model assumption, patients presenting `high_blood_pressure`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine`, `serum_sodium`  are more likely to experience heart failure and die. Moreover, presenting a `high_blood_pressure` increases the risk of heart failure by a hazard rate of 1.53, holding other covariates fixed, while, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine` and  `serum_sodium`  increases the risk of dying from heart failure with hazard rate magnitude greater or almost equal  to 1.  
 
+\newpage
 ##  Parametric model 
 We fit a weibull parametric model and compare it to non parametric KM model.  
 
-```{r}
+```{r,echo=FALSE,  warning=FALSE}
 library(flexsurv)
 fitparam <- flexsurvreg(Surv(time, DEATH_EVENT) ~., 
                         data = data,
@@ -318,7 +319,7 @@ fitparam <- flexsurvreg(Surv(time, DEATH_EVENT) ~.,
 ```
 
 
-```{r}
+```{r,echo=FALSE,  warning=FALSE}
 par (mfrow = c(1,2))
 plot(fitparam,
      frame = F,
@@ -330,7 +331,7 @@ abline(h = 0.5,lty="dashed",col ="blue")
 ```
 This plot suggest that we could model this data under a linear model with a negative slope. As it decreases very fast. However, this not a stepwise or strictly smooth curve. So we tried an exponential model .The weibull model curve is plotted against KM model. Though, KM model could suffice to model this dataset, we would suggest.  
 
-
+\newpage
 # Results   
 In this application, we were to analyze time to heart failure in this cohort, the event being death. We have found that, there is no median time to death. Our results show that there is an effect of high blood pressure , EF and ageing,but surprisingly no effect of Smocking, nor diabetes or anaemia. There is a group difference in survival time in  `EF` and `high blood pressure`. Half of subject having  `EF` less than 30 , are expected to die after  almost 175 days. An additive model with covariates,  `high_blood_pressure1`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45` , `age > 60` , `serum_creatinine` and `serum_sodium` shows that, patients presenting a profile with theses covariates are more likely to experience heart failure and die. Also, There is a  noticeable  effect of ageing `(age > 60)`. 
 
