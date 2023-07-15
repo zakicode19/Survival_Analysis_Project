@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 # Context
-Heart failure is a chronic condition where the heart is unable to effectively pump enough blood to meet the body's needs. It occurs when the heart muscle becomes weakened or damaged, leading to symptoms like shortness of breath, fatigue, and fluid retention. Heart failures happen from a variety of reason such as coronary disease, diabetes, obesity etc. In this study we try to determine the importance of various parameter on the survival of patient having heart failure. The event we analyse is then the death of the patient.
+Heart failure is a chronic condition where the heart is unable to effectively pump enough blood to meet the body's needs. It occurs when the heart muscle becomes weakened or damaged, leading to symptoms like shortness of breath, fatigue, and fluid retention. Heart failures happen from a variety of reason such as coronary disease, diabetes, obesity etc. In this study we will analyse time heart failure and investigate  the importance of various factors on the survival of patient having heart failure. The event we analyse is then the death of the patient.
 
 ```{r libraries, message=FALSE,warning=FALSE}
 library(survival)
@@ -37,7 +37,7 @@ We explain some of the non-evident features:
   - ejection fraction : percentage of blood pump out of the left ventricle with each contraction. If the EF is less than 40%, it indicates an heart failure or cardiomyopathy. 
   - platelets : the normal amount of platelets ranges between 150,000 to 450,000 per $\mu$L of blood.   
   - serum sodium : sodium amount in blood is a well known indicator of heart failure.   Is normal value ranges between 135-145 milli equivalents per liter.
-The presence of time and death event make this dataset perfectly adapted for a survival analysis. he unit of time is day. As all the patient didn't die, the dataset has right censored data.   
+The presence of time and death event make this dataset perfectly adapted for a survival analysis.The unit of time is day. As all the patients didn't die, the dataset has right censored data.   
 
 ```{r  load data}
 data <- read_csv('data/heart_failure_clinical_records_dataset.csv')
@@ -87,7 +87,7 @@ ggsurvplot(fit.KM,
            break.time.by = 50, 
            #palette=c("dodgerblue2"),
            title="Kaplan-Meier Curve for Heart Failure Survival",
-           xlab = "Day",
+           xlab = "Days",
            #risk.table.height=.30, 
           data=data)  
 
@@ -95,7 +95,7 @@ ggsurvplot(fit.KM,
 As the EF level and the high tension are the directly heart related covariates, we use them for the Kaplan Meier survival estimate  
 
 ## univariate analysis : group comparison 
-### Ejection fraction
+### Ejection fraction (EF)
 
 ```{r}
 fit.EF <- survfit(Surv(time,DEATH_EVENT) ~ EF_levels, data = data)
@@ -109,7 +109,7 @@ ggsurvplot(fit.EF,
            break.time.by = 25, 
            pval=TRUE,
            title="Survival time difference in  EF levels ",  
-           xlab = "Day",
+           xlab = "Days",
           # risk.table.height=.30,
            data=data) } else {
 cat("p-value = ",surv_pvalue(fit.EF,data)$pval ,". There is no difference of EF in time to heart failure")
@@ -122,7 +122,7 @@ fit.EF
 
 Since the p-value is less than 0.05 we reject the null hypothesis, this means  there is a statistically significant difference in survival between the three groups.  
 
-### high blood pressure  
+### high blood pressure (hbp) 
 ```{r}
 
 fit.hbp <- survfit(Surv(time,DEATH_EVENT) ~ high_blood_pressure, data = data)
@@ -134,8 +134,9 @@ ggsurvplot(fit.hbp,
            pval=TRUE,
            break.time.by = 50, 
            title="Survival time difference in high blood pressure ", 
-           xlab = "Day",
-           #risk.table.height=.30, 
+           xlab = "Days",
+           risk.table = T,
+           risk.table.height=.30,
            data=data)} else {
             cat("No difference in survival time in hbp")
           }
@@ -153,7 +154,7 @@ ggsurvplot(fit.KM3,
            pval=TRUE,
            break.time.by = 50, 
            title="survival time difference in Sex ", 
-           xlab = "Day",
+           xlab = "Days",
            #risk.table.height=.30, 
            data=data)} else {
   cat("p-value = ",surv_pvalue(fit.KM3,data = data)$pval,". No statistical difference, i.e. no difference of time to heart failure in sex")
@@ -234,7 +235,8 @@ if (surv_pvalue(age.fit,data)$pval <= 0.5) {
   ggsurvplot(age.fit, 
           break.time.by = 50,
           pval=TRUE, 
-          #risk.table=TRUE, 
+          risk.table=TRUE, 
+          xlab = "Days",
           legend.title="over60",  
           palette=c("dodgerblue2", "orchid2"),
            title="Kaplan-Meier Curve for Heart Failure Survival", 
@@ -278,9 +280,9 @@ if(surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
 ```
 
 ## Multivariates analysis : Cox Proportional Hazards Model.  
-
+### effect of EF + hbp + age 
 ```{r}
-fit_cph <- coxph(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia +     EF_levels + over60, 
+fit_cph <- coxph(Surv(time, DEATH_EVENT) ~., 
                  data = data)
 summary(fit_cph) %>% 
   coefficients() %>% 
@@ -290,17 +292,17 @@ summary(fit_cph) %>%
 sum
 ```
 
-Patients presenting `high_blood_pressure`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45` and `age > 60`  are more likely to experience heart failure and die. Moreover, presenting a `high_blood_pressure` increases the risk of heart failure by a hazard rate of 1.53, holding other covariates fixed, while, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60` increases the risk of dying from heart failure with hazard rate magnitude less than 1. 
+Patients presenting `high_blood_pressure`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine`, `serum_sodium`  are more likely to experience heart failure and die. Moreover, presenting a `high_blood_pressure` increases the risk of heart failure by a hazard rate of 1.53, holding other covariates fixed, while, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine` and  `serum_sodium`  increases the risk of dying from heart failure with hazard rate magnitude greater or almost equal  to 1. 
 
 # Results   
-In this application, we were to analyze time to heart failure in this cohort, the event being death. We have found that, there is no median time to death. Our results show that there is an effect of high blood pressure , EF and ageing,but surprisingly no effect of Smocking, nor diabetes or anaemia. There is a group difference in survival time in  `EF` and `high blood pressure`. Half of subject having  `EF` less than 30 , are expected to die after  almost 175 days. An additive model with covariates,  `high_blood_pressure1`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45` and `age > 60`  shows that, patients presenting a profile with theses covariates are more likely to experience heart failure and die. Also, There is a marginal, but noticeable  effect of ageing. 
+In this application, we were to analyze time to heart failure in this cohort, the event being death. We have found that, there is no median time to death. Our results show that there is an effect of high blood pressure , EF and ageing,but surprisingly no effect of Smocking, nor diabetes or anaemia. There is a group difference in survival time in  `EF` and `high blood pressure`. Half of subject having  `EF` less than 30 , are expected to die after  almost 175 days. An additive model with covariates,  `high_blood_pressure1`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45` , `age > 60` , `serum_creatinine` and `serum_sodium` shows that, patients presenting a profile with theses covariates are more likely to experience heart failure and die. Also, There is a  noticeable  effect of ageing `(age > 60)`. 
 
 # Discussion 
 
-We aim at analyzing time to heart failure.We have found that, there is an effect of high blood pressure , EF and ageing,but surprisingly no effect of Smocking, nor diabetes or anaemia. (to document)
+We aim at analyzing time to heart failure.We have found that, there is an effect of high blood pressure , EF , serum_creatinine, serum_sodium and ageing, but surprisingly no effect of Smocking, nor diabetes or anaemia. `(why : to document)`
 
 # Conclusions   
-Following our results, we can conclude that Ejection fraction and high blood pressure influence time to heart failure and the occurence of CHD as well as aging. Overall,above half of these patients died early of heart failure. Therefore we couldn't have an overall median time to heart failure. 
+Following our results, we can conclude that ageing, Ejection fraction, serum_creatinine , serum_sodium and high blood pressure influence time to heart failure and the occurence of CHD as well as ageing. Overall, above half of these patients died early of heart failure. Though there was a high risk of death in this cohort.. 
 
 # References   
 
