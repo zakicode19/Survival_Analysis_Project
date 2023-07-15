@@ -25,7 +25,6 @@ library(survminer)
 # Data description
 
 The individuals of the data were patients admitted to Institute of Cardiology and Allied hospital Faisalabad-Pakistan during April-December (2015). From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years. All have left ventricular systolic dysfunction, belonging to  New York Heart Association (NYHA) class III and IV.  Follow up time was between 4 to 285 days.
--- maybe we remove the rest of this section
 Class III means patients have marked limitations of physical activity. They are comfortable at rest but experience symptoms with less than ordinary physical activity. Class IV means patients are unable to carry out any physical activity without discomfort. They may have symptoms even at rest and are often bedridden. 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 data <- read_csv("./data/heart_failure_clinical_records_dataset.csv")
@@ -38,7 +37,7 @@ head(data)
 summary(data)
 ```
 The database has 13 features, including Age, Anemia, High Blood Pressure, Creatinine phosphokinase, Diabetes, Ejection Fraction, Sex, Platelets, Serum Creatinine, Serum Sodium, Smoking, Time, and Death Event. Out of these features, 5 are Boolean variables, namely Anemia, High Blood Pressure, Diabetes, Sex, and Smoking.
-We added two new features to the dataset: "over60" and "EF_levels." The "over60" feature categorizes individuals as either over 60 years old or not, based on their age. The "EF_levels" feature categorizes individuals into different groups based on their Ejection Fraction. These new features allow us to create Kaplan-Meier survival curves and analyze the data based on these specific characteristics.
+
 
 We added two new features to the dataset: "over60" and "EF_levels." The "over60" feature categorizes individuals as either over 60 years old or not, based on their age. The "EF_levels" feature categorizes individuals into 3 different groups based on their Ejection Fraction (EF) "EF <= 30", "30 < EF <= 45"and  "EF > 45". These new features allow us to create Kaplan-Meier survival curves and analyze the data based on these specific characteristics.
 
@@ -66,6 +65,14 @@ data$bad_platelet <- 1
 
 # Use conditional statements to assign 1 to 'new_column' if 'value' meets the condition
 data$bad_platelet[data$platelets >= 150000 & data$platelets <= 450000] <- 0
+```
+
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+d_age60 <-
+  data |>
+  mutate(age60 = factor(age <= 60,
+                      labels = c("<=60", ">60")))
+data$over60 = d_age60$age60
 ```
 
 
@@ -115,27 +122,28 @@ With a p-value less than 0.0001, the EF levels are indeed statistically signific
 #creatinine_phosphokinase
 #platelets      
 #serum_creatinine  
-#serum_sodium     
-cov_name <- colnames(data)
-columns_to_remove <- c("time", "DEATH_EVENT")
-cov_name <- cov_name[!cov_name %in% columns_to_remove]
+#serum_sodium
+# names categorical columns 
+cov_name <- c("anaemia", "diabetes", "high_blood_pressure", "sex", "smoking", "EF_levels", "bad_platelet", "over60")
+#columns_to_remove <- c("time", "DEATH_EVENT", "age", "ejection_fraction")
+#cov_name <- cov_name[!cov_name %in% columns_to_remove]
 #p_values <- vector("numeric", length = ncol(data) - 2)
 tmpfun <- function(x) as.formula(paste("Surv(time,DEATH_EVENT)",x,sep="~"))
 for (i in 1:length(cov_name)){
-  cox_model <- coxph(tmpfun(cov_name[i]), data = data)
+  longrank_test <- survdiff(tmpfun(cov_name[i]), data = data)
   #cox_model <- coxph(Surv(time, DEATH_EVENT) ~ cov_name[i] , data = data)
-  p_value <-summary(cox_model)$coefficients[,"Pr(>|z|)"]
+  p_value <-longrank_test$pvalue
   print(paste(cov_name[i], ":", p_value))
 }
 ```
-We apply the same method to the others covariates. The p-value for continuous covariates are obtained with Cox proportional hazards model. The results are summerized in the following tab:
+A long-rank test was conducted to determine whether there are differences in survival between groups on each of the categorical covariates. The results are summarized in the following table:
 
-|covariate |  Sex     | Smoking  | Diabetes | Aenemia  | Age      |creat.phos| platelets|ser. creat|ser.sodium|  
-|----------|----------|----------|----------|----------|----------|----------|----------|----------|----------|
-| p-value  |  0.95    | 0.96     |  0.84    | 0.099    | 8.36e-07 |  0.26    |  0.4585  |1.18e-07  | 0.00052  |
+|covariate |  Sex     | Smoking  | Diabetes | Aenemia |EF levels |bad platelet|Age over 60|Blood Pressure|  
+|----------|----------|----------|----------|---------|----------|------------|-----------|--------------|
+| p-value  |  0.95    | 0.96     |  0.84    | 0.099   | 1.81e-07 |     0.26   |    0.02   |    0.05      |
 
 
-Since the p-value is less than 0.05 we reject the null hypothesis for age,serum creatinine and serum sodium, this means these covariates have a statistically significant impact in survival.
+We can notice that the p-value is below 0.05 for EF levels, High blood pressure, and Age over 60. Therefore, we reject the null hypothesis, indicating that these covariates have a statistically significant impact on survival.
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,  fig.keep="none"}
 fit.KM3 <- survfit(Surv(time,DEATH_EVENT) ~ sex, data = data)
@@ -156,6 +164,7 @@ fit.logrank
 #From survival curves of male and female and using the log rank test we can concluded that the sex has no significant impact  
 
 ```
+
 
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
@@ -240,7 +249,7 @@ d_age60 <-
   data |>
   mutate(age60 = factor(age <= 60,
                       labels = c("<=60", ">60")))
-
+data$over60 = d_age60$age60
 table(d_age60$age60)
 ```
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
@@ -319,7 +328,7 @@ column_names <- names(data)
 print(column_names)
 ```
 
-```{r}
+```{r,echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 columns_to_remove <- c("time", "DEATH_EVENT", "EF_levels")
 column_names <- column_names[!column_names %in% columns_to_remove]
 
