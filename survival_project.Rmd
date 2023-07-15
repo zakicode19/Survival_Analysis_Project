@@ -21,6 +21,7 @@ In this study, our goal is to evaluate the significance of different parameters 
 library(survival)
 library(tidyverse)
 library(survminer)
+library(knitr)
 ```
 
 
@@ -168,9 +169,10 @@ A long-rank test was conducted to determine whether there are differences in sur
 
 We can notice that the p-value is below 0.05 for EF levels, High blood pressure, and Age over 60. Therefore, we reject the null hypothesis, indicating that these covariates have a statistically significant impact on survival.
 
-# Proportional Hazards Model
-Let's assume that our survival function follow a semi-parametric model. 
-## Univariate Cox regression
+# Proportional Hazards Model. 
+Let's assume that our survival function follow a semi-parametric model.  
+
+## Univariate Cox regression. 
 We will be examining the significance of each covariate using the Cox regression model. The results will be presented in a table, which includes the covariates, their beta coefficients, hazard ratios, lower confidence intervals, upper confidence intervals, and p-values.
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
@@ -307,7 +309,7 @@ Under semi-parametric model assumption, patients presenting `high_blood_pressure
 
 \newpage
 ##  Parametric model 
-We fit a weibull parametric model and compare it to non parametric KM model.  
+We fit a full weibull parametric model and compare it to non parametric KM model.  
 
 ```{r,echo=FALSE,  warning=FALSE}
 library(flexsurv)
@@ -315,32 +317,43 @@ fitparam <- flexsurvreg(Surv(time, DEATH_EVENT) ~.,
                         data = data,
                         dist = "weibull")
 
-# summary(fitparam) %>% head()
 ```
 
 
 ```{r,echo=FALSE,  warning=FALSE}
 par (mfrow = c(1,2))
+
+# plot wb model 
 plot(fitparam,
      frame = F,
      col = "red",
-     type = "survival", main= "weibull model")
+     type = "survival", 
+     main= "weibull model",
+     , ylim= c(0.4,1)
+     )
 abline(h = 0.5, lty="dashed",col ="blue")
-plot(fit.KM,col = "green", frame = F,main = "KM model")
+
+# plot KM model 
+plot(fit.KM,
+     col = "green",
+     frame = F,
+     main = "KM model", 
+     ylim= c(0.4,1))
 abline(h = 0.5,lty="dashed",col ="blue")
 ```
-This plot suggest that we could model this data under a linear model with a negative slope. As it decreases very fast. However, this not a stepwise or strictly smooth curve. So we tried an exponential model .The weibull model curve is plotted against KM model. Though, KM model could suffice to model this dataset, we would suggest.  
+This plot suggest that we could model this data under a linear model with a negative slope. As it decreases very fast. However, this is somewhat a stepwise and not strictly a smooth curve, but a tiny smooth curve. So we tried a parametric model. The weibull model curve is plotted against KM model. Though, KM model could suffice to model this dataset. We would suggest or a semi-parametric model could also be a good bet.  
 
-\newpage
+
 # Results   
 In this application, we were to analyze time to heart failure in this cohort, the event being death. We have found that, there is no median time to death. Our results show that there is an effect of high blood pressure , EF and ageing,but surprisingly no effect of Smocking, nor diabetes or anaemia. There is a group difference in survival time in  `EF` and `high blood pressure`. Half of subject having  `EF` less than 30 , are expected to die after  almost 175 days. An additive model with covariates,  `high_blood_pressure1`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45` , `age > 60` , `serum_creatinine` and `serum_sodium` shows that, patients presenting a profile with theses covariates are more likely to experience heart failure and die. Also, There is a  noticeable  effect of ageing `(age > 60)`. 
 
+\newpage
 # Discussion 
 
-We aim at analyzing time to heart failure.We have found that, there is an effect of high blood pressure , EF , serum_creatinine, serum_sodium and ageing, but surprisingly no effect of Smocking, nor diabetes or anaemia.  following one could consider that, this study held in a cohort of patients of NYHA class III and IV which are advanced stages of heart failure. Similar results concerning diabetes and smoking have been reported by [F Otero-Raviña et al. 2009](https://scholar.google.com/scholar?q=Morbidity+and+mortality+among+heart+failure+patients+in+Galicia%2C+N.W.+Spain%3A+the+GALICAP+study+Otero-Raviña+2009) as well. 
+We aim at analyzing time to heart failure.From non-parametric model, we have found that, there is a rapid decrease in time to heart failure. Semi-parametric model, yields that here is an effect of high blood pressure , EF , serum_creatinine, serum_sodium and ageing, but surprisingly no effect of Smocking, nor diabetes or anaemia. However, one could consider that, this study held in a cohort of patients of NYHA class III and IV which are advanced stages of heart failure. Hence, similar results concerning diabetes and smoking have been reported by [F Otero-Raviña et al. (2009)](https://scholar.google.com/scholar?q=Morbidity+and+mortality+among+heart+failure+patients+in+Galicia%2C+N.W.+Spain%3A+the+GALICAP+study+Otero-Raviña+2009) as well. In addition, Ahmad et al.(2017) stated that, this non significance might be due to drug and medication effect reducing these factors impact on time to heart failure.   
 
 # Conclusions   
-Following our results, we can conclude that ageing, Ejection fraction, serum_creatinine , serum_sodium and high blood pressure influence time to heart failure and the occurence of CHD as well as ageing. Overall, above half of these patients died early of heart failure. Though there was a high risk of death in this cohort.. 
+Following our results, we can conclude that ageing, Ejection fraction, serum_creatinine , serum_sodium and high blood pressure influence time to heart failure and the occurence of CHD. Overall, above half of these patients died early of heart failure. Though there was a high risk of death in this cohort. 
 
 # References   
 
