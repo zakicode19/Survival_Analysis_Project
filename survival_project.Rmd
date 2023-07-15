@@ -9,16 +9,19 @@ output:
 \newpage
 # Introduction
 
-Heart failure is a chronic condition where the heart is unable to effectively pump enough blood to meet the body's needs. It occurs when the heart muscle becomes weakened or damaged, leading to symptoms like shortness of breath, fatigue, and fluid retention. Heart failures happen from a variety of reason such as coronary disease, diabetes, obesity etc. In this study we try to determine the importance of various parameter on the survival of patient having heart failure. The event we analyse is then the death of the patient.
+Heart failure is a chronic condition characterized by the heart's inability to pump an adequate amount of blood to meet the body's demands. It can occur when the heart muscle becomes weakened or damaged, resulting in symptoms such as shortness of breath, fatigue, and fluid retention. Various factors, including coronary disease, diabetes, and obesity, can contribute to the development of heart failure. 
+In this study, our goal is to evaluate the significance of different parameters on the survival of patients with heart failure. We analyze the occurrence of patient deaths as the event of interest.
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 library(survival)
 library(tidyverse)
 library(survminer)
 ```
-# Dataset
+# Data description
 
-The individuals of the data were patients admitted to Institute of Cardiology and Allied hospital Faisalabad-Pakistan during April-December (2015). From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years. All have left ventricular systolic dysfunction, belonging to  New York Heart Association (NYHA) class III and IV. Class III means patients have marked limitations of physical activity. They are comfortable at rest but experience symptoms with less than ordinary physical activity. Class IV means patients are unable to carry out any physical activity without discomfort. They may have symptoms even at rest and are often bedridden. 
+The individuals of the data were patients admitted to Institute of Cardiology and Allied hospital Faisalabad-Pakistan during April-December (2015). From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years. All have left ventricular systolic dysfunction, belonging to  New York Heart Association (NYHA) class III and IV.  Follow up time was between 4 to 285 days.
+-- maybe we remove the rest of this section
+Class III means patients have marked limitations of physical activity. They are comfortable at rest but experience symptoms with less than ordinary physical activity. Class IV means patients are unable to carry out any physical activity without discomfort. They may have symptoms even at rest and are often bedridden. 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 data <- read_csv("./data/heart_failure_clinical_records_dataset.csv")
 ```
@@ -29,15 +32,13 @@ head(data)
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 summary(data)
 ```
-The dataset has 13 features: Age, Anemia, High Blood Pressure, Creatinine phosphokinase, Diabetes, Ejection Fraction, Sex, Platelets, Serum Creatinine, Serum Sodium, Smoking, Time and Death Event. 
-We explain some of the non-evident features:
-  - anemia : lower than normal haemoglobin concentration in blood
-  - Creatinine phosphokinase : an enzyme notably found in the heart. Can leak in the blood in case of heart damage
-  - serum creatinine : a waste formed by the functioning of muscle. It is present in the blood and eliminated by the kidney through urine. As it is a serum creatinine the amount is not error induced by the taking of supplement creatine  
-  - ejection fraction : percentage of blood pump out of the left ventricle with each contraction. If the EF is less than 40%, it indicates an heart failure or cardiomyopathy
-  - platelets : the normal amount of platelets ranges between 150,000 to 450,000 per $\mu$L of blood. 
-  - serum sodium : sodium amount in blood is a well known indicator of heart failure.   Is normal value ranges between 135-145 milli equivalents per liter.
-The presence of time and death event make this dataset perfectly adapted for a survival analysis. he unit of time is day. As all the patient didn't die, the dataset has right censored data.
+The database has 13 features, including Age, Anemia, High Blood Pressure, Creatinine phosphokinase, Diabetes, Ejection Fraction, Sex, Platelets, Serum Creatinine, Serum Sodium, Smoking, Time, and Death Event. Out of these features, 5 are Boolean variables, namely Anemia, High Blood Pressure, Diabetes, Sex, and Smoking.
+We added two new features to the dataset: "over60" and "EF_levels." The "over60" feature categorizes individuals as either over 60 years old or not, based on their age. The "EF_levels" feature categorizes individuals into different groups based on their Ejection Fraction. These new features allow us to create Kaplan-Meier survival curves and analyze the data based on these specific characteristics.
+
+We added two new features to the dataset: "over60" and "EF_levels." The "over60" feature categorizes individuals as either over 60 years old or not, based on their age. The "EF_levels" feature categorizes individuals into 3 different groups based on their Ejection Fraction (EF) "EF <= 30", "30 < EF <= 45"and  "EF > 45". These new features allow us to create Kaplan-Meier survival curves and analyze the data based on these specific characteristics.
+
+The presence of time and death event in this dataset makes it suited for survival analysis. The unit of time in the dataset is measured in days. Since not all patients experienced the event of interest (death), the dataset contains right-censored data.
+
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 data$sex <- factor(data$sex, labels= c("female", "male"))
 data$anaemia <- factor(data$anaemia)
@@ -293,54 +294,97 @@ ggsurv$plot +theme_bw() +
 
 # Cox Proportional Hazards Model
 
+## Univariate Cox regression
+We will be examining the significance of each covariate using the Cox regression model. The results will be presented in a table, which includes the covariates, their beta coefficients, hazard ratios, lower confidence intervals, upper confidence intervals, and p-values.
+
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 head(data)
 ```
-
-## Univariate Cox regression
-
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 column_names <- names(data)
 print(column_names)
 ```
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-column_names[1:11]
-```
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-covariates <- column_names[1:11]
+
+```{r}
+columns_to_remove <- c("time", "DEATH_EVENT", "EF_levels")
+column_names <- column_names[!column_names %in% columns_to_remove]
+
+#indices_to_delete <- c(5,12, 13,14,15)
+covariates <- column_names #[-indices_to_delete]
 #covariates <- append(covariates, 'EF_levels')
 covariates
 ```
 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+```{r,  echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 univ_formulas <- sapply(covariates,
                         function(x) as.formula(paste('Surv(time, DEATH_EVENT)~', x)))
+
 univ_models <- lapply( univ_formulas, function(x){coxph(x, data = data)})
+
+
 # Extract data 
 univ_results <- lapply(univ_models,
                        function(x){ 
                           x <- summary(x)
-                          p.value<-signif(x$wald["pvalue"], digits=2)
-                          wald.test<-signif(x$wald["test"], digits=2)
+                          p.value<-signif(x$coef[5], digits=2)
+                          #wald.test<-signif(x$wald["test"], digits=2)
                           beta<-signif(x$coef[1], digits=2);#coeficient beta
                           HR <-signif(x$coef[2], digits=2);#exp(beta)
-                          HR.confint.lower <- signif(x$conf.int[,"lower .95"], 2)
+                          HR.confint.lower <- signif(x$conf.int[,"lower .95"],2)
                           HR.confint.upper <- signif(x$conf.int[,"upper .95"],2)
-                          HR <- paste0(HR, " (", 
-                                       HR.confint.lower, "-", HR.confint.upper, ")")
-                          res<-c(beta, HR, wald.test, p.value)
-                          names(res)<-c("beta", "HR (95% CI for HR)", "wald.test", 
+                          
+                          res<-c(beta, HR, HR.confint.lower,HR.confint.upper, p.value)
+                          names(res)<-c("beta", "HR", "lower_ci"," upper_ci", 
                                         "p.value")
                           return(res)
                           #return(exp(cbind(coef(x),confint(x))))
                          })
+
+res <- t(as.data.frame(univ_results, check.names = FALSE))
+res <- as.data.frame(res)
+
+
+# add EF_levels p-value and HR
+fit_cph <- coxph(Surv(time, DEATH_EVENT) ~ EF_levels, data = data)
+
+x <- summary(fit_cph)
+p.value<-signif(x$coef[,5], digits=2)
+beta<-signif(x$coef[,1], digits=2);#coeficient beta
+HR <-signif(x$coef[,2], digits=2);#exp(beta)
+HR.confint.lower <- signif(x$conf.int[,"lower .95"],2)
+HR.confint.upper <- signif(x$conf.int[,"upper .95"],2)
+
+c1<- c(as.numeric(beta[1]), as.numeric(HR[1]),as.numeric(HR.confint.lower[1]), as.numeric(HR.confint.upper[1]), as.numeric(p.value[1]) )
+
+c2<- c(as.numeric(beta[2]), as.numeric(HR[2]),as.numeric(HR.confint.lower[2]), as.numeric(HR.confint.upper[2]), as.numeric(p.value[2]) )
+
+
+updated_df <- rbind(res, c1, c2)
+
+
+rownames(updated_df)[nrow(updated_df) - 1] <- "30 <= EF vs 30 < EF <= 45 "
+rownames(updated_df)[nrow(updated_df)] <- "30 <= EF vs EF > 45"
 ```
 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-res <- t(as.data.frame(univ_results, check.names = FALSE))
-as.data.frame(res)
+```{r}
+print(updated_df)
 ```
+For table above we say that for all these covariates, including anaemia, creatinine_phosphokinase, diabetes, platelets, sex, and smoking, have p-values greater than the chosen significance level (e.g., 0.05). This suggests that these covariates are statistically insignificant, indicating that there is no strong evidence of a significant association between these variables and the hazard rate.
+
+Ejection Fraction (EF) appears to be a significant factor as it shows statistical significance for both comparisons: 30 <= EF vs 30 < EF <= 45 and 30 <= EF vs EF > 45, with p-values below 0.05.
+For both EF level comparisons, the negative beta coefficients indicate a negative association between EF levels and the hazard rate. The hazard ratios of 0.31 and 0.41 suggest lower hazard rates for the specified EF levels compared to the baseline group.
+
+High Blood Pressure is another significant factor with p-value = 0.037.  These covariates have The positive beta coefficient of 0.44 suggests a positive association High Blood Pressure and risk of death.
+
+
+
+
+
+
+
+
+  
 
 
 ## Multivariate Cox regression analysis
