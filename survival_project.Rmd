@@ -17,6 +17,28 @@ library(survival)
 library(tidyverse)
 library(survminer)
 ```
+
+
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+font_main=11
+font_axis=9
+font_tickslab=9
+font_legend=9
+theme <- theme_survminer(
+  base_size = 10,
+  base_family = "",
+  font.main = c(font_main, "plain", "black"),
+  font.submain = c(font_main-1, "plain", "black"),
+  font.x = c(font_axis, "plain", "black"),
+  font.y = c(font_axis, "plain", "black"),
+  font.caption = c(font_main, "plain", "black"),
+  font.tickslab = c(font_tickslab, "plain", "black"),
+  font.legend = c(font_legend, "plain", "black"),
+)
+
+```
+
+
 # Data description
 
 The individuals of the data were patients admitted to Institute of Cardiology and Allied hospital Faisalabad-Pakistan during April-December (2015). From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years. All have left ventricular systolic dysfunction, belonging to  New York Heart Association (NYHA) class III and IV.  Follow up time was between 4 to 285 days.
@@ -51,7 +73,7 @@ data$smoking <- factor(data$smoking)
 # Define the breakpoints for the three levels
 breakpoints <- c(-Inf, 30, 45, Inf)
 # Divide EF into three levels
-data$EF_levels <- cut(data$ejection_fraction, breaks = breakpoints, labels = c("EF \\leq 30", "30 < EF \\leq 45", "EF > 45"))
+data$EF_levels <- cut(data$ejection_fraction, breaks = breakpoints, labels = c("EF <= 30", "30 < EF <= 45", "EF > 45"))
 ```
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
@@ -80,24 +102,27 @@ fit.KM
 ```
 
 96 (32%) patients died due to the Cardiovascular Heart Disease (CHD). The median, 0.95LCL and 0.95UCl are NA because too many data are right censored. We need to go deeper in the analysis. 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-layout_matrix_1 <- matrix(1:2, ncol = 1)  
-layout(layout_matrix_1)
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,fig.width=6}
+#layout_matrix_1 <- matrix(1:2, ncol = 1)  
+#layout(layout_matrix_1)
 ggsurvplot(fit.KM,data=data, conf.int=TRUE, pval=TRUE, #risk.table=TRUE, risk.table.height=.10,
-           palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", xlab = "Day"
+           palette=c("dodgerblue2", "orchid2"), legend="none", ylim=c(0.5,1),
+           title="Kaplan-Meier Curve for Heart Failure Survival", xlab = "Day", ggtheme = theme
            )
 ```
+
 As the EF level and the high tension are the directly heart related covariates, we use them for the Kaplan Meier survival estimate    
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 fit.KM1 <- survfit(Surv(time,DEATH_EVENT) ~ EF_levels, data = data)
 ```
 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4}
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,fig.width=6}
 ggsurvplot(fit.KM1, conf.int=TRUE, pval=TRUE,
-           title="Kaplan-Meier Curve per EF levels for Heart Failure Survival", xlab = "Day",
-           risk.table.height=.20, data=data)
+           legend.title="EF levels", legend.lab=c("EF <= 30", "30 < EF <= 45", "EF > 45"),
+           title="Kaplan-Meier Curve per EF levels for Heart Failure Survival", xlab = "Day", pval.size=4,
+           legend=c(0.15,0.25),pval.coord=c(0,0), ggtheme = theme,
+           data=data)
 ```
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
@@ -107,8 +132,10 @@ fit.KM2
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,  fig.keep="none"}
 ggsurvplot(fit.KM2, conf.int=TRUE, pval=TRUE,
+           legend.title="Blood pressure", legend.lab=c("low", "high"),
            title="Kaplan-Meier Curve per high blood pressure for Heart Failure Survival", xlab = "Day",
-           risk.table.height=.30, data=data)
+           pval.size=4,legend=c(0.15,0.25),pval.coord=c(0,0), ggtheme = theme,
+           data=data)
 ```
 With a p-value less than 0.0001, the EF levels are indeed statistically significant to the death for patient with heart failure as shown by the plot.
  
@@ -139,176 +166,6 @@ A long-rank test was conducted to determine whether there are differences in sur
 
 
 We can notice that the p-value is below 0.05 for EF levels, High blood pressure, and Age over 60. Therefore, we reject the null hypothesis, indicating that these covariates have a statistically significant impact on survival.
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,  fig.keep="none"}
-fit.KM3 <- survfit(Surv(time,DEATH_EVENT) ~ sex, data = data)
-ggsurvplot(fit.KM3, conf.int=TRUE, pval=TRUE,
-           legend.labs=c("Female", "Male"), legend.title="Sex", 
-           title="Kaplan-Meier Curve per sex for Heart Failure Survival", xlab = "Day",
-           risk.table.height=.30, data=data)
-
-```
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-#CDF:
-plot(fit.KM, fun = "F")
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ sex, data = data)
-fit.logrank
-#From survival curves of male and female and using the log rank test we can concluded that the sex has no significant impact  
-
-```
-
-
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-## Smoking
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ smoking , data = data)
-sfit
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="smoking",  
-           palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Failure Survival", 
-           risk.table.height=.28, data=data)
-```
-
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-## Blood pressure
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure , data = data)
-sfit
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="high_blood_pressure",  
-           palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Failure Survival", 
-           risk.table.height=.28, data=data)
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-###  The logrank test
-fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ high_blood_pressure, data = data)
-fit.logrank
-#The p-value is 0.04, which is less than 0.05. Therefore, you can conclude that there is evidence of a statistically significant #difference in survival between the two groups based on the presence or absence of high blood pressure
-```
-
-
-
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-## Diabetes
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ diabetes , data = data)
-sfit
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="diabetes",  
-           palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
-           risk.table.height=.28, data=data)
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-## Anaemia
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ anaemia , data = data)
-sfit
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE, 
-            legend.title="anaemia",  
-           palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
-           risk.table.height=.28, data=data)
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-### The logrank test
-fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ anaemia, data = data)
-fit.logrank
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-
-## The impact of age
-
-#We need to discretize the variable 'age' since it is a continuous variable. We will use 60 as the threshold for discretization #because it represents the median age. 
-d_age60 <-
-  data |>
-  mutate(age60 = factor(age <= 60,
-                      labels = c("<=60", ">60")))
-data$over60 = d_age60$age60
-table(d_age60$age60)
-```
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-data$over60 = d_age60$age60
-
-```
-
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ over60 , data = data)
-sfit
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, 
-            legend.title="Age over 60",  
-           palette=c("dodgerblue2", "orchid2"),
-           title="Kaplan-Meier Curve for Heart Falure Survival", data=data)
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-### The logrank test
-fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ over60, data = data)
-fit.logrank
-```
-
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-## age and anaemia
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + anaemia , data = data)
-sfit
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-ggsurv <- ggsurvplot(sfit,  conf.int = TRUE,data=data,
-                     ggtheme = theme_bw())
-
-ggsurv$plot +theme_bw() + 
-  theme (legend.position = "right")
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-## high_blood_pressure and anaemia
-sfit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia , data = data)
-sfit
-```
-
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-ggsurvplot(sfit, pval = TRUE , data = data, 
-           legend.title="",
-           title="Kaplan-Meier Curve for Heart Falure Survival", 
-           )
-```
-
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
-ggsurv <- ggsurvplot(sfit,  conf.int = TRUE,data=data,
-                     ggtheme = theme_bw())
-
-ggsurv$plot +theme_bw() + 
-  theme (legend.position = "right")+
-  facet_grid('anaemia')
-```
-
 
 # Cox Proportional Hazards Model
 
@@ -385,8 +242,10 @@ rownames(updated_df)[nrow(updated_df) - 1] <- "30 <= EF vs 30 < EF <= 45 "
 rownames(updated_df)[nrow(updated_df)] <- "30 <= EF vs EF > 45"
 ```
 
-```{r}
-print(updated_df)
+```{r, echo=FALSE, warning=FALSE}
+library(knitr)
+knitr::kable( as.data.frame(updated_df))
+
 ```
 For table above we say that for all these covariates, including anaemia, creatinine_phosphokinase, diabetes, platelets, sex, and smoking, have p-values greater than the chosen significance level (e.g., 0.05). This suggests that these covariates are statistically insignificant, indicating that there is no strong evidence of a significant association between these variables and the hazard rate.
 
@@ -398,30 +257,25 @@ High Blood Pressure is another significant factor with p-value = 0.037.  These c
 
 ## Multivariate Cox regression analysis
 ### additive effect of age and anaemia. 
-```{r}
+```{r,  echo=FALSE, warning=FALSE}
 age_anaemia_fit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + anaemia , data = data)
 if (surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
-  
-ggsurv <- ggsurvplot(age_anaemaia_fit, 
-                     conf.int = TRUE,data=data,
-                     ggtheme = theme_bw())
-
-ggsurv$plot +theme_bw() + 
-  theme (legend.position = "right") } else {
+  ggsurvplot(age_anaemaia_fit,  conf.int = TRUE,data=data, ggtheme = theme)
+ } else {
     cat("p-value =",round(surv_pvalue(age_anaemia_fit,data)$pval,3),
         "There is no difference in survival time with respect to age and anaemia" )
   }
 ```
 
 ### additive effect of high_blood_pressure and anaemia. 
-```{r}
+```{r  echo=FALSE, warning=FALSE}
 age_anaemia_fit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia , data = data)
 if(surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
         ggsurvplot(sfit, 
            #fun = "event", 
            pval = TRUE , data = data, 
            legend.title="",
-           title="additive effect of anaemia and high blood pressure"
+           title="additive effect of anaemia and high blood pressure", ggtheme = theme
            )
 } else {
   cat("p-value = ",surv_pvalue(age_anaemia_fit,data)$pval,"There is no additive effect of hbp and anaemia")
@@ -430,7 +284,7 @@ if(surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
 
 
 ### effect of EF + hbp + age 
-```{r}
+```{r  echo=FALSE,  warning=FALSE}
 fit_cph <- coxph(Surv(time, DEATH_EVENT) ~., 
                  data = data)
 summary(fit_cph) %>% 
@@ -438,21 +292,29 @@ summary(fit_cph) %>%
   as.data.frame() %>% 
   filter(`Pr(>|z|)` <= 0.05) %>% 
   select(contains(c("coef","Pr"))) -> sum
-sum
+
+knitr::kable( as.data.frame(sum))
 ```
 
 
 ### additive effect of high_blood_pressure and anaemia and EF_levels and age over 60. 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+```{r, echo=FALSE,  warning=FALSE}
 fit_cph <- coxph(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia + EF_levels +over60, data = data)
-fit_cph
 ```
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+
+```{r, echo=FALSE,  warning=FALSE}
+library(broom)
+coefs <- tidy(fit_cph, exponentiate = TRUE)  # Set exponentiate to TRUE to obtain hazard ratios instead of coefficients
+# Print the coefficients and p-values table
+knitr::kable( as.data.frame(coefs))
+```
+
+```{r, echo=FALSE, warning=FALSE}
 test.ph <- cox.zph(fit_cph)
-test.ph
+knitr::kable( as.data.frame(test.ph$table))
 ```
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
-ggcoxzph(test.ph)
+```{r, echo=FALSE, warning=FALSE}
+ggcoxzph(test.ph, ggtheme = theme)
 ```
 
 Patients presenting `high_blood_pressure`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine`, `serum_sodium`  are more likely to experience heart failure and die. Moreover, presenting a `high_blood_pressure` increases the risk of heart failure by a hazard rate of 1.53, holding other covariates fixed, while, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine` and  `serum_sodium`  increases the risk of dying from heart failure with hazard rate magnitude greater or almost equal  to 1. 
