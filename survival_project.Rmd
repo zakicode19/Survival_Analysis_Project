@@ -20,7 +20,6 @@ library(survminer)
 # Data description
 
 The individuals of the data were patients admitted to Institute of Cardiology and Allied hospital Faisalabad-Pakistan during April-December (2015). From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years. All have left ventricular systolic dysfunction, belonging to  New York Heart Association (NYHA) class III and IV.  Follow up time was between 4 to 285 days.
--- maybe we remove the rest of this section
 Class III means patients have marked limitations of physical activity. They are comfortable at rest but experience symptoms with less than ordinary physical activity. Class IV means patients are unable to carry out any physical activity without discomfort. They may have symptoms even at rest and are often bedridden. 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 data <- read_csv("./data/heart_failure_clinical_records_dataset.csv")
@@ -33,7 +32,7 @@ head(data)
 summary(data)
 ```
 The database has 13 features, including Age, Anemia, High Blood Pressure, Creatinine phosphokinase, Diabetes, Ejection Fraction, Sex, Platelets, Serum Creatinine, Serum Sodium, Smoking, Time, and Death Event. Out of these features, 5 are Boolean variables, namely Anemia, High Blood Pressure, Diabetes, Sex, and Smoking.
-We added two new features to the dataset: "over60" and "EF_levels." The "over60" feature categorizes individuals as either over 60 years old or not, based on their age. The "EF_levels" feature categorizes individuals into different groups based on their Ejection Fraction. These new features allow us to create Kaplan-Meier survival curves and analyze the data based on these specific characteristics.
+
 
 We added two new features to the dataset: "over60" and "EF_levels." The "over60" feature categorizes individuals as either over 60 years old or not, based on their age. The "EF_levels" feature categorizes individuals into 3 different groups based on their Ejection Fraction (EF) "EF <= 30", "30 < EF <= 45"and  "EF > 45". These new features allow us to create Kaplan-Meier survival curves and analyze the data based on these specific characteristics.
 
@@ -160,9 +159,7 @@ fit.logrank
 #From survival curves of male and female and using the log rank test we can concluded that the sex has no significant impact  
 
 ```
-```{r}
-as.numeric(fit.logrank$pvalue[1])
-```
+
 
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
@@ -327,7 +324,7 @@ column_names <- names(data)
 print(column_names)
 ```
 
-```{r}
+```{r,echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 columns_to_remove <- c("time", "DEATH_EVENT", "EF_levels")
 column_names <- column_names[!column_names %in% columns_to_remove]
 
