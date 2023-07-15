@@ -103,7 +103,7 @@ ggsurvplot(fit.KM2, conf.int=TRUE, pval=TRUE,
            title="Kaplan-Meier Curve per high blood pressure for Heart Failure Survival", xlab = "Day",
            risk.table.height=.30, data=data)
 ```
- The EF levels are indeed heavily correlated to the death for patient with heart failure as shown by the plot and the p-value. The high pressure is less correlated.
+With a p-value less than 0.0001, the EF levels are indeed statistically significant to the death for patient with heart failure as shown by the plot.
  
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4}
@@ -152,8 +152,9 @@ fit.logrank
 
 ```
 
-## Smoking
+
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+## Smoking
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ smoking , data = data)
 sfit
 ```
@@ -166,8 +167,9 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
            risk.table.height=.28, data=data)
 ```
 
-## Blood pressure
+
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+## Blood pressure
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure , data = data)
 sfit
 ```
@@ -203,8 +205,9 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
            title="Kaplan-Meier Curve for Heart Falure Survival", 
            risk.table.height=.28, data=data)
 ```
-## Anaemia
+
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+## Anaemia
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ anaemia , data = data)
 sfit
 ```
@@ -216,15 +219,18 @@ ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, risk.table=TRUE,
            title="Kaplan-Meier Curve for Heart Falure Survival", 
            risk.table.height=.28, data=data)
 ```
-### The logrank test
+
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+### The logrank test
 fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ anaemia, data = data)
 fit.logrank
 ```
+
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
+
 ## The impact of age
 
-We need to discretize the variable 'age' since it is a continuous variable. We will use 60 as the threshold for discretization because it represents the median age. 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+#We need to discretize the variable 'age' since it is a continuous variable. We will use 60 as the threshold for discretization #because it represents the median age. 
 d_age60 <-
   data |>
   mutate(age60 = factor(age <= 60,
@@ -243,46 +249,49 @@ sfit <- survfit(Surv(time, DEATH_EVENT) ~ over60 , data = data)
 sfit
 ```
 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
 ggsurvplot(sfit, conf.int=TRUE, pval=TRUE, 
             legend.title="Age over 60",  
            palette=c("dodgerblue2", "orchid2"),
            title="Kaplan-Meier Curve for Heart Falure Survival", data=data)
 ```
+
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
 ### The logrank test
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 fit.logrank <- survdiff(Surv(time, DEATH_EVENT) ~ over60, data = data)
 fit.logrank
 ```
 
+
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
 ## age and anaemia
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + anaemia , data = data)
 sfit
 ```
 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
 ggsurv <- ggsurvplot(sfit,  conf.int = TRUE,data=data,
                      ggtheme = theme_bw())
 
 ggsurv$plot +theme_bw() + 
   theme (legend.position = "right")
 ```
+
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
 ## high_blood_pressure and anaemia
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 sfit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia , data = data)
 sfit
 ```
 
 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
 ggsurvplot(sfit, pval = TRUE , data = data, 
            legend.title="",
            title="Kaplan-Meier Curve for Heart Falure Survival", 
            )
 ```
 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,  fig.keep="none"}
 ggsurv <- ggsurvplot(sfit,  conf.int = TRUE,data=data,
                      ggtheme = theme_bw())
 
@@ -378,16 +387,53 @@ For both EF level comparisons, the negative beta coefficients indicate a negativ
 High Blood Pressure is another significant factor with p-value = 0.037.  These covariates have The positive beta coefficient of 0.44 suggests a positive association High Blood Pressure and risk of death.
 
 
-
-
-
-
-
-
-  
-
-
 ## Multivariate Cox regression analysis
+### additive effect of age and anaemia. 
+```{r}
+age_anaemia_fit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + anaemia , data = data)
+if (surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
+  
+ggsurv <- ggsurvplot(age_anaemaia_fit, 
+                     conf.int = TRUE,data=data,
+                     ggtheme = theme_bw())
+
+ggsurv$plot +theme_bw() + 
+  theme (legend.position = "right") } else {
+    cat("p-value =",round(surv_pvalue(age_anaemia_fit,data)$pval,3),
+        "There is no difference in survival time with respect to age and anaemia" )
+  }
+```
+
+### additive effect of high_blood_pressure and anaemia. 
+```{r}
+age_anaemia_fit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia , data = data)
+if(surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
+        ggsurvplot(sfit, 
+           #fun = "event", 
+           pval = TRUE , data = data, 
+           legend.title="",
+           title="additive effect of anaemia and high blood pressure"
+           )
+} else {
+  cat("p-value = ",surv_pvalue(age_anaemia_fit,data)$pval,"There is no additive effect of hbp and anaemia")
+}
+```
+
+
+### effect of EF + hbp + age 
+```{r}
+fit_cph <- coxph(Surv(time, DEATH_EVENT) ~., 
+                 data = data)
+summary(fit_cph) %>% 
+  coefficients() %>% 
+  as.data.frame() %>% 
+  filter(`Pr(>|z|)` <= 0.05) %>% 
+  select(contains(c("coef","Pr"))) -> sum
+sum
+```
+
+
+### additive effect of high_blood_pressure and anaemia and EF_levels and age over 60. 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 fit_cph <- coxph(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia + EF_levels +over60, data = data)
 fit_cph
@@ -400,6 +446,24 @@ test.ph
 ggcoxzph(test.ph)
 ```
 
+Patients presenting `high_blood_pressure`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine`, `serum_sodium`  are more likely to experience heart failure and die. Moreover, presenting a `high_blood_pressure` increases the risk of heart failure by a hazard rate of 1.53, holding other covariates fixed, while, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine` and  `serum_sodium`  increases the risk of dying from heart failure with hazard rate magnitude greater or almost equal  to 1. 
 
-DATA Source
-Ahmad, Tanvir; Munir, Assia; Bhatti, Sajjad Haider; Aftab, Muhammad; Ali Raza, Muhammad (2017). DATA_MINIMAL.. PLOS ONE. Dataset. https://doi.org/10.1371/journal.pone.0181001.s001
+# Results   
+In this application, we were to analyze time to heart failure in this cohort, the event being death. We have found that, there is no median time to death. Our results show that there is an effect of high blood pressure , EF and ageing,but surprisingly no effect of Smocking, nor diabetes or anaemia. There is a group difference in survival time in  `EF` and `high blood pressure`. Half of subject having  `EF` less than 30 , are expected to die after  almost 175 days. An additive model with covariates,  `high_blood_pressure1`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45` , `age > 60` , `serum_creatinine` and `serum_sodium` shows that, patients presenting a profile with theses covariates are more likely to experience heart failure and die. Also, There is a  noticeable  effect of ageing `(age > 60)`. 
+
+# Discussion 
+
+We aim at analyzing time to heart failure.We have found that, there is an effect of high blood pressure , EF , serum_creatinine, serum_sodium and ageing, but surprisingly no effect of Smocking, nor diabetes or anaemia. `(why : to document)`
+
+# Conclusions   
+Following our results, we can conclude that ageing, Ejection fraction, serum_creatinine , serum_sodium and high blood pressure influence time to heart failure and the occurence of CHD as well as ageing. Overall, above half of these patients died early of heart failure. Though there was a high risk of death in this cohort.. 
+
+# References   
+
+Ahmad T, Munir A, Bhatti SH, Aftab M, Raza MA (2017) Survival analysis of heart failure patients: A case study. PLoS ONE 12(7): e0181001. https://doi.org/10.1371/journal.pone.0181001
+
+
+
+  
+
+
