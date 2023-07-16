@@ -1,6 +1,7 @@
 ---
 title: "Time to heart failure survival analysis"
 author: "Christophe Mpaga, Ahmed Oulad Amara, Adrien Parruitte"
+bibliography: citations/citations.bib
 output: 
   pdf_document: 
     toc: true
@@ -47,7 +48,8 @@ theme <- theme_survminer(
 
 # Data description
 
-The individuals of the data were patients admitted to Institute of Cardiology and Allied hospital Faisalabad-Pakistan during April-December (2015). From the 299 patients of the dataset, 105 are women and are 194 men. They are between 40 and 95 years. All have left ventricular systolic dysfunction, belonging to  New York Heart Association (NYHA) class III and IV.  Follow up time was between 4 to 285 days.
+This section provides a description of the dataset used in this study.Dataset was introuduced by Ahmad et al. [@Ahmad2017data], it was used a survival analysis study of heart failure [@ahm2017sur]. The dataset consists of individuals who were patients at the Institute of Cardiology and Allied hospital Faisalabad-Pakistan during April-December (2015).
+299 patients are inluded in the dataset, 105 are women and are 194 men. They are between 40 and 95 years. All have left ventricular systolic dysfunction, belonging to  New York Heart Association (NYHA) class III and IV.  Follow up time was between 4 to 285 days.
 Class III means patients have marked limitations of physical activity. They are comfortable at rest but experience symptoms with less than ordinary physical activity. Class IV means patients are unable to carry out any physical activity without discomfort. They may have symptoms even at rest and are often bedridden. 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 data <- read_csv("./data/heart_failure_clinical_records_dataset.csv")
@@ -93,11 +95,12 @@ data$bad_platelet[data$platelets >= 150000 & data$platelets <= 450000] <- 0
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 data$over60 <- cut(data$age, breaks = c(-Inf, 60, Inf), labels = c("<=60", ">60"), include.lowest = TRUE)
 ```
+# Overall Kaplan-Meyer estimator
+Kaplan-Meyer estimator[@km1958non] is nonparmetric  survival function estimartor.
+
+## Univariate analysis : group comparison 
 
 
-# Univariate analysis : group comparison 
-## Overall Kaplan-Meyer estimator
-We estimate the survival probability with the Kaplan - meier estimator.
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 fit.KM <- survfit(Surv(time,DEATH_EVENT) ~ 1, data = data)
 fit.KM
@@ -355,9 +358,12 @@ We aim at analyzing time to heart failure.From non-parametric model, we have fou
 # Conclusions   
 Following our results, we can conclude that ageing, Ejection fraction, serum_creatinine , serum_sodium and high blood pressure influence time to heart failure and the occurence of CHD. Overall, above half of these patients died early of heart failure. Though there was a high risk of death in this cohort. 
 
-# References   
 
-Ahmad T, Munir A, Bhatti SH, Aftab M, Raza MA (2017) Survival analysis of heart failure patients: A case study. PLoS ONE 12(7): e0181001. https://doi.org/10.1371/journal.pone.0181001
+
+
+# References  
+
+<div id="refs"></div>
 
 https://cran.r-project.org/web/packages/flexsurv/vignettes/flexsurv.pdf
 
