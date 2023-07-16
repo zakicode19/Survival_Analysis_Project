@@ -23,6 +23,7 @@ library(survival)
 library(tidyverse)
 library(survminer)
 library(knitr)
+library(gridExtra)
 ```
 
 
@@ -111,6 +112,8 @@ fit.KM
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,fig.width=6}
 #layout_matrix_1 <- matrix(1:2, ncol = 1)  
 #layout(layout_matrix_1)
+# center tilte 
+centre = theme_grey() + theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 ggsurvplot(fit.KM,data=data, conf.int=TRUE, pval=TRUE, #risk.table=TRUE, risk.table.height=.10,
            palette=c("dodgerblue2", "orchid2"), legend="none", ylim=c(0.5,1),
            title="Kaplan-Meier Curve for Heart Failure Survival", xlab = "Day", ggtheme = theme
@@ -128,11 +131,13 @@ fit.KM1 <- survfit(Surv(time,DEATH_EVENT) ~ EF_levels, data = data)
 ```
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,fig.width=6}
-ggsurvplot(fit.KM1, conf.int=TRUE, pval=TRUE,
+splots <- list()
+
+splots[[1]] <- ggsurvplot(fit.KM1, conf.int=TRUE, pval=TRUE,
            legend.title="EF levels", legend.lab=c("EF <= 30", "30 < EF <= 45", "EF > 45"),
-           title="Kaplan-Meier Curve per EF levels for Heart Failure Survival", xlab = "Day", pval.size=4,
-           legend=c(0.15,0.25),pval.coord=c(0,0), ggtheme = theme,
-           data=data)
+           title="EF levels Survival Curve", xlab = "Day", pval.size=4,legend=c(0.15,0.25),pval.coord=c(0,0),
+            ggtheme = centre,
+           data=data, size =1)
 ```
 With a p-value less than 0.0001, the EF levels are indeed statistically significant to the death for patient with heart failure. Observing the survival curve plot for the EF levels we see that the probability of survival decreases more rapidly in the group with EF levels below 30 compared to the group with higher EF levels.
 
@@ -145,15 +150,22 @@ fit.KM2
 ```
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,fig.width=6}
-ggsurvplot(fit.KM2, conf.int=TRUE, pval=TRUE,
+splots[[2]] <- ggsurvplot(fit.KM2, conf.int=TRUE, pval=TRUE,
            legend.title="Blood pressure", legend.lab=c("low", "high"),
-           title="Kaplan-Meier Curve per high blood pressure for Heart Failure Survival", xlab = "Day",
-           pval.size=4,legend=c(0.15,0.25),pval.coord=c(0,0), ggtheme = theme,
-           data=data)
+           title="High blood pressure Survival Curve", xlab = "Day",ylab = "",
+           pval.size=4,legend=c(0.15,0.25),pval.coord=c(0,0), ggtheme = centre,
+           data=data, size =1)
 ```
 With a p-value of less than 0.05, high blood pressure is  indeed statistically significant factor in death for patient with heart failure.
 
-### Summary table of long-rank test
+
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,fig.height=5,fig.width=14 }
+
+arrange_ggsurvplots(splots, print = TRUE,ncol = 2, nrow = 1,)
+```
+
+
+### Summary table of Long-Rank Test
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4}
 #creatinine_phosphokinase
