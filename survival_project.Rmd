@@ -164,7 +164,7 @@ arrange_ggsurvplots(splots, print = TRUE,ncol = 2, nrow = 1)
 ```
 
 
-### Summary table of Long-Rank Test
+### Summary table of Log-Rank Test
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4}
 #creatinine_phosphokinase
@@ -184,7 +184,7 @@ for (i in 1:length(cov_name)){
   print(paste(cov_name[i], ":", p_value))
 }
 ```
-A Long-rank test was conducted to determine whether there are differences in survival between groups on each of the categorical covariates. The results are summarized in the following table:
+A Log-rank test was conducted to determine whether there are differences in survival between groups on each of the categorical covariates. The results are summarized in the following table:
 
 |covariate |  Sex     | Smoking  | Diabetes | Aenemia |EF levels |bad platelet|Age over 60|Blood Pressure|  
 |----------|----------|----------|----------|---------|----------|------------|-----------|--------------|
@@ -368,11 +368,14 @@ abline(h = 0.5,lty="dashed",col ="blue")
 ```
 This plot suggest that we could model this data under a linear model with a negative slope. As it decreases very fast. However, this is somewhat a stepwise and not strictly a smooth curve, but a tiny smooth curve. So we tried a parametric model. The weibull model curve is plotted against KM model. Though, KM model could suffice to model this dataset. We would suggest or a semi-parametric model could also be a good bet.  
 
-
-# Results   
-In this application, we were to analyze time to heart failure in this cohort, the event being death. We have found that, there is no median time to death. Our results show that there is an effect of high blood pressure , EF and ageing,but surprisingly no effect of Smocking, nor diabetes or anaemia. There is a group difference in survival time in  `EF` and `high blood pressure`. Half of subject having  `EF` less than 30 , are expected to die after  almost 175 days. An additive model with covariates,  `high_blood_pressure1`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45` , `age > 60` , `serum_creatinine` and `serum_sodium` shows that, patients presenting a profile with theses covariates are more likely to experience heart failure and die. Also, There is a  noticeable  effect of ageing `(age > 60)`. 
-
 \newpage
+# Results   
+In this study, we analyzed time to heart failure in a cohort, with death as the event of interest. Our results revealed several significant findings. Firstly, there was no observed median time to death in this cohort. Secondly, our analysis demonstrated that high blood pressure, ejection fraction (EF), and aging have a significant impact on survival time. Surprisingly, we found no significant effect of smoking, diabetes, or anemia on survival time.
+There was a notable difference in survival time based on EF and high blood pressure. Specifically, approximately half of the subjects with an EF less than 30 are expected to experience death after an average of 175 days.
+Moreover, using an additive model with covariates such as high blood pressure, EF level, serum creatinine, and serum sodium, we observed that patients presenting anomaly in those are more likely to experience heart failure and have a higher risk of mortality.
+Lastly, our analysis revealed a significant effect of aging (age > 60) on the likelihood of heart failure.
+
+
 # Discussion 
 
 We aim at analyzing time to heart failure.From non-parametric model, we have found that, there is a rapid decrease in time to heart failure. Semi-parametric model, yields that here is an effect of high blood pressure , EF , serum_creatinine, serum_sodium and ageing, but surprisingly no effect of Smocking, nor diabetes or anaemia. However, one could consider that, this study held in a cohort of patients of NYHA class III and IV which are advanced stages of heart failure. Hence, similar results concerning diabetes and smoking have been reported by [F Otero-Raviña et al. (2009)](https://scholar.google.com/scholar?q=Morbidity+and+mortality+among+heart+failure+patients+in+Galicia%2C+N.W.+Spain%3A+the+GALICAP+study+Otero-Raviña+2009) as well. In addition, Ahmad et al.(2017) stated that, this non significance might be due to drug and medication effect reducing these factors impact on time to heart failure.   
