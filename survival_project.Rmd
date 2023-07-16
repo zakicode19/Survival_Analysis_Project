@@ -382,7 +382,7 @@ plot(fitparam,
      type = "survival", 
      main= "weibull model",
      xlab = "Days",
-     ylab = "probability of time to heart failure",
+     ylab = "survival probability",
      ylim= c(0.4,1), xlim = c(0,300)
      )
 abline(h = 0.5, lty="dashed",col ="blue")
@@ -393,7 +393,7 @@ plot(fit.KM,
      frame = F,
      main = "KM model", 
      xlab = "Days",
-     ylab = "probabilty of time to heart failure ",
+     ylab = "survival probabilty",
      ylim= c(0.4,1), xlim = c(0,300))
 abline(h = 0.5,lty="dashed",col ="blue")
 ```
