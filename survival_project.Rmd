@@ -95,11 +95,12 @@ data$bad_platelet[data$platelets >= 150000 & data$platelets <= 450000] <- 0
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 data$over60 <- cut(data$age, breaks = c(-Inf, 60, Inf), labels = c("<=60", ">60"), include.lowest = TRUE)
 ```
-# Overall Kaplan-Meyer estimator
-Kaplan-Meyer estimator[@km1958non] is nonparmetric  survival function estimartor.
+# Kaplan-Meyer estimator
+Kaplan-Meyer estimator[@km1958non] is non-parmetric method to estimate survival probability.
 
-## Univariate analysis : group comparison 
 
+ 
+## Overall survival curve for all patients
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 fit.KM <- survfit(Surv(time,DEATH_EVENT) ~ 1, data = data)
@@ -116,7 +117,11 @@ ggsurvplot(fit.KM,data=data, conf.int=TRUE, pval=TRUE, #risk.table=TRUE, risk.ta
            )
 ```
 
-As the EF level and the high tension are the directly heart related covariates, we use them for the Kaplan Meier survival estimate    
+## Comparing Survival between multiple groups 
+
+### The impact of Ejection fraction
+Ejection fraction measures the ablity of heart to pump oxygen-rich blood to body\footnote{https://my.clevelandclinic.org/health/articles/16950-ejection-fraction}.To estimate the survival impact of this covariate, we employ the Kaplan-Meier model.
+   
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 fit.KM1 <- survfit(Surv(time,DEATH_EVENT) ~ EF_levels, data = data)
@@ -129,21 +134,26 @@ ggsurvplot(fit.KM1, conf.int=TRUE, pval=TRUE,
            legend=c(0.15,0.25),pval.coord=c(0,0), ggtheme = theme,
            data=data)
 ```
+With a p-value less than 0.0001, the EF levels are indeed statistically significant to the death for patient with heart failure. Observing the survival curve plot for the EF levels we see that the probability of survival decreases more rapidly in the group with EF levels below 30 compared to the group with higher EF levels.
 
+### The impact of high blood pressure
+High blood pressure forces the heart to work harder to pump blood to the rest of the body this increase the risk of heart attack\footnote{https://www.mayoclinic.org/diseases-conditions/high-blood-pressure/in-depth/high-blood-pressure/art-20045868}. This make it important to explore the survival impact of  this covariate.
+ 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 fit.KM2 <- survfit(Surv(time,DEATH_EVENT) ~ high_blood_pressure, data = data)
 fit.KM2
 ```
 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,  fig.keep="none"}
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,fig.width=6}
 ggsurvplot(fit.KM2, conf.int=TRUE, pval=TRUE,
            legend.title="Blood pressure", legend.lab=c("low", "high"),
            title="Kaplan-Meier Curve per high blood pressure for Heart Failure Survival", xlab = "Day",
            pval.size=4,legend=c(0.15,0.25),pval.coord=c(0,0), ggtheme = theme,
            data=data)
 ```
-With a p-value less than 0.0001, the EF levels are indeed statistically significant to the death for patient with heart failure as shown by the plot.
- 
+With a p-value of less than 0.05, high blood pressure is  indeed statistically significant factor in death for patient with heart failure.
+
+### Summary table of long-rank test
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4}
 #creatinine_phosphokinase
@@ -163,7 +173,7 @@ for (i in 1:length(cov_name)){
   print(paste(cov_name[i], ":", p_value))
 }
 ```
-A long-rank test was conducted to determine whether there are differences in survival between groups on each of the categorical covariates. The results are summarized in the following table:
+A Long-rank test was conducted to determine whether there are differences in survival between groups on each of the categorical covariates. The results are summarized in the following table:
 
 |covariate |  Sex     | Smoking  | Diabetes | Aenemia |EF levels |bad platelet|Age over 60|Blood Pressure|  
 |----------|----------|----------|----------|---------|----------|------------|-----------|--------------|
@@ -172,10 +182,10 @@ A long-rank test was conducted to determine whether there are differences in sur
 
 We can notice that the p-value is below 0.05 for EF levels, High blood pressure, and Age over 60. Therefore, we reject the null hypothesis, indicating that these covariates have a statistically significant impact on survival.
 
-# Proportional Hazards Model. 
+# Cox Proportional Hazards Model 
 Let's assume that our survival function follow a semi-parametric model.  
 
-## Univariate Cox regression. 
+## Univariate Cox regression
 We will be examining the significance of each covariate using the Cox regression model. The results will be presented in a table, which includes the covariates, their beta coefficients, hazard ratios, lower confidence intervals, upper confidence intervals, and p-values.
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
@@ -265,7 +275,7 @@ On the other hand, for the covariate over60 the p-value being less than 0.05 and
 
  
 ## Multivariate  analysis  
-### Cox semi-parametric model : additive effect of age and anaemia.  
+### Additive effect of age and anaemia.  
 ```{r,  echo=FALSE, warning=FALSE, results='asis'}
 age_anaemia_fit <- survfit(Surv(time, DEATH_EVENT) ~ over60 + anaemia , data = data)
 if (surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
@@ -276,7 +286,7 @@ if (surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
   }
 ```
 
-### Additive effect of high_blood_pressure and anaemia. 
+### Additive effect of high blood pressure and anaemia. 
 ```{r  echo=FALSE, warning=FALSE, results='asis'}
 age_anaemia_fit <- survfit(Surv(time, DEATH_EVENT) ~ high_blood_pressure + anaemia , data = data)
 if(surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
@@ -292,7 +302,7 @@ if(surv_pvalue(age_anaemia_fit,data)$pval <= 0.05){
 ```
 
 
-### Semi-parametric full model 
+### Full model 
 ```{r,  echo=FALSE,  warning=FALSE}
 fit_cph <- step(coxph(Surv(time, DEATH_EVENT) ~., 
                  data = data),direction= "both",trace = 0)
@@ -311,7 +321,7 @@ knitr::kable( as.data.frame(sum))
 Under semi-parametric model assumption, patients presenting `high_blood_pressure`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine`, `serum_sodium`  are more likely to experience heart failure and die. Moreover, presenting a `high_blood_pressure` increases the risk of heart failure by a hazard rate of 1.53, holding other covariates fixed, while, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine` and  `serum_sodium`  increases the risk of dying from heart failure with hazard rate magnitude greater or almost equal  to 1.  
 
 \newpage
-##  Parametric model 
+# Parametric model 
 We fit a full weibull parametric model and compare it to non parametric KM model.  
 
 ```{r,echo=FALSE,  warning=FALSE}
