@@ -193,6 +193,9 @@ A Long-rank test was conducted to determine whether there are differences in sur
 
 We can notice that the p-value is below 0.05 for EF levels, High blood pressure, and Age over 60. Therefore, we reject the null hypothesis, indicating that these covariates have a statistically significant impact on survival.
 
+## The limit of Kaplan-Meyer estimator
+The simplicity non-parametric nature and ability to estimate survival probability of   Kaplan-Meyer estimator make the model  it an essential and  tool in any survival analysis study. Yet the model has it limitations do not allow to estimate estimate hazard ratio it is limit only categorical  covariate.  In the next section will introduce the Cox Proportional Hazards model, a semi-parametric model  to overcome some of these limitations.
+
 # Cox Proportional Hazards Model 
 Let's assume that our survival function follow a semi-parametric model.  
 
