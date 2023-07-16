@@ -96,6 +96,8 @@ d_age60 <-
                       labels = c("<=60", ">60")))
 data$over60 = d_age60$age60
 ```
+# Kaplan-Meyer estimator
+Kaplan-Meyer estimator[@km1958non] is non-parametric method to estimate survival probability.
 
 
 # Univariate analysis : group comparison 
@@ -142,8 +144,15 @@ ggsurvplot(fit.KM2, conf.int=TRUE, pval=TRUE,
            pval.size=4,legend=c(0.15,0.25),pval.coord=c(0,0), ggtheme = theme,
            data=data)
 ```
-With a p-value less than 0.0001, the EF levels are indeed statistically significant to the death for patient with heart failure as shown by the plot.
- 
+With a p-value of less than 0.05, high blood pressure is  indeed statistically significant factor in death for patient with heart failure.
+
+
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,fig.height=6,fig.width=14 }
+arrange_ggsurvplots(splots, print = TRUE,ncol = 2, nrow = 1)
+```
+
+
+### Summary table of Log-Rank Test
 
 ```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4}
 #creatinine_phosphokinase
@@ -163,7 +172,7 @@ for (i in 1:length(cov_name)){
   print(paste(cov_name[i], ":", p_value))
 }
 ```
-A long-rank test was conducted to determine whether there are differences in survival between groups on each of the categorical covariates. The results are summarized in the following table:
+A Log-rank test was conducted to determine whether there are differences in survival between groups on each of the categorical covariates. The results are summarized in the following table:
 
 |covariate |  Sex     | Smoking  | Diabetes | Aenemia |EF levels |bad platelet|Age over 60|Blood Pressure|  
 |----------|----------|----------|----------|---------|----------|------------|-----------|--------------|
@@ -324,16 +333,29 @@ par (mfrow = c(1,2))
 plot(fitparam,
      frame = F,
      col = "red",
-     type = "survival", main= "weibull model")
+     type = "survival", 
+     main= "weibull model",
+     ylim= c(0.4,1), xlim = c(0,285)
+     )
 abline(h = 0.5, lty="dashed",col ="blue")
-plot(fit.KM,col = "green", frame = F,main = "KM model")
+
+# plot KM model 
+plot(fit.KM,
+     col = "green",
+     frame = F,
+     main = "KM model", 
+     ylim= c(0.4,1), xlim = c(0,285))
 abline(h = 0.5,lty="dashed",col ="blue")
 ```
-This plot suggest that we could model this data under a linear model with a negative slope. As it decreases very fast. However, this not a stepwise or strictly smooth curve. So we tried an exponential model .The weibull model curve is plotted against KM model. Though, KM model could suffice to model this dataset, we would suggest.  
+This plot suggests that we could model this data under a linear model with a negative slope. As it decreases very fast. However, this is somewhat a stepwise and not strictly a smooth curve, but a tiny smooth curve. So we tried a parametric model. The weibull model curve is plotted against KM model. Though, KM model could suffice to model this dataset. We would suggest or a semi-parametric model could also be a good bet.  
 
 \newpage
 # Results   
-In this application, we were to analyze time to heart failure in this cohort, the event being death. We have found that, there is no median time to death. Our results show that there is an effect of high blood pressure , EF and ageing,but surprisingly no effect of Smocking, nor diabetes or anaemia. There is a group difference in survival time in  `EF` and `high blood pressure`. Half of subject having  `EF` less than 30 , are expected to die after  almost 175 days. An additive model with covariates,  `high_blood_pressure1`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45` , `age > 60` , `serum_creatinine` and `serum_sodium` shows that, patients presenting a profile with theses covariates are more likely to experience heart failure and die. Also, There is a  noticeable  effect of ageing `(age > 60)`. 
+In this study, we analyzed time to heart failure in a cohort, with death as the event of interest. Our results revealed several significant findings. Firstly, there was no observed median time to death in this cohort. Secondly, our analysis demonstrated that high blood pressure, ejection fraction (EF), and aging have a significant impact on survival time. Surprisingly, we found no significant effect of smoking, diabetes, or anemia on survival time.
+There was a notable difference in survival time based on EF and high blood pressure. Specifically, approximately half of the subjects with an EF less than 30 are expected to experience death after an average of 175 days.
+Moreover, using an additive model with covariates such as high blood pressure, EF level, serum creatinine, and serum sodium, we observed that patients presenting anomaly in those are more likely to experience heart failure and have a higher risk of mortality.
+Lastly, our analysis revealed a significant effect of aging (age > 60) on the likelihood of heart failure.
+
 
 # Discussion 
 
