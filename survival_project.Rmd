@@ -32,6 +32,7 @@ font_main=11
 font_axis=9
 font_tickslab=9
 font_legend=9
+centre = theme_grey() + theme(plot.title = element_text(hjust = 0.5, face = "bold", size=10))
 theme <- theme_survminer(
   base_size = 10,
   base_family = "",
@@ -109,11 +110,10 @@ fit.KM
 ```
 
 96 (32%) patients died due to the Cardiovascular Heart Disease (CHD). The median, 0.95LCL and 0.95UCl are NA because too many data are right censored. We need to go deeper in the analysis. 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,fig.width=6}
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=3,fig.width=6}
 #layout_matrix_1 <- matrix(1:2, ncol = 1)  
 #layout(layout_matrix_1)
 # center tilte 
-centre = theme_grey() + theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 ggsurvplot(fit.KM,data=data, conf.int=TRUE, pval=TRUE, #risk.table=TRUE, risk.table.height=.10,
            palette=c("dodgerblue2", "orchid2"), legend="none", ylim=c(0.5,1),
            title="Kaplan-Meier Curve for Heart Failure Survival", xlab = "Day", ggtheme = theme
@@ -130,7 +130,7 @@ Ejection fraction measures the ablity of heart to pump oxygen-rich blood to body
 fit.KM1 <- survfit(Surv(time,DEATH_EVENT) ~ EF_levels, data = data)
 ```
 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,fig.width=6}
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 splots <- list()
 
 splots[[1]] <- ggsurvplot(fit.KM1, conf.int=TRUE, pval=TRUE,
@@ -149,7 +149,7 @@ fit.KM2 <- survfit(Surv(time,DEATH_EVENT) ~ high_blood_pressure, data = data)
 fit.KM2
 ```
 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE, fig.height=4,fig.width=6}
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE}
 splots[[2]] <- ggsurvplot(fit.KM2, conf.int=TRUE, pval=TRUE,
            legend.title="Blood pressure", legend.lab=c("low", "high"),
            title="High blood pressure Survival Curve", xlab = "Day",ylab = "",
@@ -159,9 +159,8 @@ splots[[2]] <- ggsurvplot(fit.KM2, conf.int=TRUE, pval=TRUE,
 With a p-value of less than 0.05, high blood pressure is  indeed statistically significant factor in death for patient with heart failure.
 
 
-```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,fig.height=5,fig.width=14 }
-
-arrange_ggsurvplots(splots, print = TRUE,ncol = 2, nrow = 1,)
+```{r, echo=FALSE, message=FALSE, results=FALSE, warning=FALSE,fig.height=6,fig.width=14 }
+arrange_ggsurvplots(splots, print = TRUE,ncol = 2, nrow = 1)
 ```
 
 
@@ -332,20 +331,18 @@ knitr::kable( as.data.frame(sum))
 
 Under semi-parametric model assumption, patients presenting `high_blood_pressure`, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine`, `serum_sodium`  are more likely to experience heart failure and die. Moreover, presenting a `high_blood_pressure` increases the risk of heart failure by a hazard rate of 1.53, holding other covariates fixed, while, `EF_levels30 < EF <= 45`, `EF_levelsEF > 45`, `age > 60`, `serum_creatinine` and  `serum_sodium`  increases the risk of dying from heart failure with hazard rate magnitude greater or almost equal  to 1.  
 
-\newpage
 # Parametric model 
 We fit a full weibull parametric model and compare it to non parametric KM model.  
 
 ```{r,echo=FALSE,  warning=FALSE}
 library(flexsurv)
-fitparam <- flexsurvreg(Surv(time, DEATH_EVENT) ~., 
+fitparam <- flexsurvreg(Surv(time, DEATH_EVENT) ~ . , 
                         data = data,
                         dist = "weibull")
 
 ```
 
-
-```{r,echo=FALSE,  warning=FALSE}
+```{r,echo=FALSE,  warning=FALSE, fig.height=6,fig.width=12}
 par (mfrow = c(1,2))
 
 # plot wb model 
@@ -354,7 +351,7 @@ plot(fitparam,
      col = "red",
      type = "survival", 
      main= "weibull model",
-     , ylim= c(0.4,1)
+     ylim= c(0.4,1), xlim = c(0,300)
      )
 abline(h = 0.5, lty="dashed",col ="blue")
 
@@ -363,7 +360,7 @@ plot(fit.KM,
      col = "green",
      frame = F,
      main = "KM model", 
-     ylim= c(0.4,1))
+     ylim= c(0.4,1), xlim = c(0,300))
 abline(h = 0.5,lty="dashed",col ="blue")
 ```
 This plot suggest that we could model this data under a linear model with a negative slope. As it decreases very fast. However, this is somewhat a stepwise and not strictly a smooth curve, but a tiny smooth curve. So we tried a parametric model. The weibull model curve is plotted against KM model. Though, KM model could suffice to model this dataset. We would suggest or a semi-parametric model could also be a good bet.  
