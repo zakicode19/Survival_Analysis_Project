@@ -15,6 +15,7 @@ header-includes:
 
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(echo=FALSE)
+rm(list = ls())
 ```
 \newpage
 # Introduction
@@ -207,7 +208,7 @@ f <- data.frame(
   covariate = c("Sex", "Smoking", "Diabetes", "Aenemia", "EF levels", "bad platelet", "Age over 60", "Blood Pressure"),
   p_value = c(0.95, 0.96, 0.84, 0.099, 1.81e-07, 0.26, 0.02, 0.05)
 )
-kable(t(f),align = "c", caption = "Summerize of Log-Rank Test")
+kable(t(f),align = "c", caption = "Summarize of Log-Rank Test")
 
 ```
 
@@ -300,8 +301,7 @@ rownames(updated_df)[nrow(updated_df)] <- "30 <= EF vs EF > 45"
 For table below we say that for all these covariates, including anaemia, creatinine_phosphokinase, diabetes, platelets, sex, and smoking, have p-values greater than the chosen significance level (e.g., 0.05). This suggests that these covariates are statistically insignificant, indicating that there is no strong evidence of a significant association between these variables and the hazard rate.
 
 ```{r, echo=FALSE, warning=FALSE}
-library(knitr)
-knitr::kable( as.data.frame(updated_df), caption = "Univariate Cox regression result")
+kable( as.data.frame(updated_df), caption = "Univariate Cox regression result")
 ```
 
 Ejection Fraction (EF) appears to be a significant factor as it shows statistical significance for both comparisons: 30 <= EF vs 30 < EF <= 45 and 30 <= EF vs EF > 45, with p-values below 0.05.
